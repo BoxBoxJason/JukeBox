@@ -8,3 +8,6 @@ dist/
 *.pem
 *.csr
 *.cer
+
+# Go
+go.sum
