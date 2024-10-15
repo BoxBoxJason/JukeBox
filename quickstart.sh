@@ -1,7 +1,7 @@
 #!/bin/bash
 
 jukebox() {
-    CONTAINER_OPERATOR="podman"
+    CONTAINER_OPERATOR="docker"
     IMAGE_NAME="jukebox"
     IMAGE_TAG="latest"
     CONTAINER_NAME="jukebox"
