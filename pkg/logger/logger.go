@@ -71,6 +71,7 @@ func Critical(v ...interface{}) {
 // Fatal logs a fatal message and exits the application.
 func Fatal(v ...interface{}) {
 	fatalLogger.Fatalln(v...)
+	os.Exit(1)
 }
 
 func isLogFileFull() bool {
