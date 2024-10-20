@@ -16,6 +16,8 @@ type User struct {
 	TotalContributions int    `gorm:"type:INTEGER;not null;default:0" json:"total_contributions"`
 	MinutesListened    int    `gorm:"type:INTEGER;not null;default:0" json:"minutes_listened"`
 	Subscriber_Tier    int    `gorm:"type:INTEGER;not null;default:0" json:"subscriber_tier"`
+	CreatedAt          int    `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt         int    `gorm:"autoUpdateTime:milli" json:"modified_at"`
 }
 
 // ================ CRUD Operations ================
