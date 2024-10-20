@@ -1,0 +1,8 @@
+FROM alpine:latest
+
+WORKDIR /opt/jukebox
+
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache py3-pip && \
+    pip install --break-system-packages --no-cache-dir transformers torch scikit-learn pandas nltk
