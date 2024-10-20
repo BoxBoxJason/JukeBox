@@ -4,16 +4,30 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/boxboxjason/jukebox/internal/api"
 	"github.com/boxboxjason/jukebox/pkg/logger"
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	main_router := mux.NewRouter()
+	// Create new main router
+	main_router := chi.NewRouter()
+
+	// Setup middlewares
+	main_router.Use(middleware.Logger)    // Log every HTTP request
+	main_router.Use(middleware.Recoverer) // Recover from panics
+	main_router.Use(middleware.RealIP)    // Get the real IP address of the client
+	main_router.Use(middleware.RequestID) // Generate a request ID for every request (might delete that later)
+
 	// Serve the frontend
-	fs := http.FileServer(http.Dir(path.Join(".", "frontend", "dist")))
-	main_router.PathPrefix("/").Handler(fs)
-	logger.Debug("Frontend routing initialized")
+	frontend_fs := http.FileServer(http.Dir(path.Join(".", "frontend", "dist")))
+	main_router.Handle("/*", frontend_fs)
+	logger.Debug("Serving frontend from ", path.Join(".", "frontend", "dist"))
+
+	// Serve the API
+	api_router := api.ApiRouter()
+	main_router.Mount("/api", api_router)
 
 	// Start the server (attempt to use TLS first)
 	logger.Info("Starting JukeBox server at https://localhost:3000")
