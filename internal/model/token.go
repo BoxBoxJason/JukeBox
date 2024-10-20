@@ -2,12 +2,27 @@ package db_model
 
 import "gorm.io/gorm"
 
+const (
+	ACCESS_TOKEN                   = "access"
+	REFRESH_TOKEN                  = "refresh"
+	ACCESS_TOKEN_EXPIRATION  int64 = 4 * 60 * 60      // 4 hours
+	REFRESH_TOKEN_EXPIRATION int64 = 7 * 24 * 60 * 60 // 7 days
+)
+
+var (
+	TOKEN_EXPIRATION_MAP = map[string]int64{
+		ACCESS_TOKEN:  ACCESS_TOKEN_EXPIRATION,
+		REFRESH_TOKEN: REFRESH_TOKEN_EXPIRATION,
+	}
+)
+
 type AuthToken struct {
 	ID           int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	User         User   `gorm:"foreignKey:UserID" json:"user"`
 	Hashed_Token string `gorm:"type:TEXT;unique;not null" json:"hashed_token"`
 	Expiration   int64  `gorm:"type:INTEGER;not null" json:"expiration"`
-	Type         string `gorm:"type:TEXT;not null" json:"type"`
+	Type         string `gorm:"type:TEXT;default:access" json:"type"`
+	LinkedToken  int    `gorm:"type:INTEGER;default:-1" json:"linked_token"`
 }
 
 // ================ CRUD Operations ================
@@ -31,9 +46,9 @@ func GetAuthTokenByID(db *gorm.DB, id int) (*AuthToken, error) {
 }
 
 // GetUserTokens retrieves all auth tokens for a user from the database
-func (user *User) GetUserTokens(db *gorm.DB) ([]AuthToken, error) {
+func (user *User) GetUserTokensByType(db *gorm.DB, token_type string) ([]AuthToken, error) {
 	var tokens []AuthToken
-	err := db.Where("user_id = ?", user.ID).Find(&tokens).Error
+	err := db.Where("user_id = ? AND type = ?", user.ID, token_type).Find(&tokens).Error
 	return tokens, err
 }
 
