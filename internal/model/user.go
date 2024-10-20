@@ -1,6 +1,7 @@
 package db_model
 
 import (
+	"github.com/boxboxjason/jukebox/pkg/customerrors"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
 	"gorm.io/gorm"
 )
@@ -108,17 +109,17 @@ func (user *User) CheckPasswordMatches(password string) bool {
 	return cryptutils.CompareHashAndString(user.Hashed_Password, password)
 }
 
-func (user *User) CheckAuthTokenMatches(db *gorm.DB, raw_token string) bool {
-	tokens, err := user.GetUserTokens(db)
+func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, token_type string) (AuthToken, error) {
+	tokens, err := user.GetUserTokensByType(db, token_type)
 	if err != nil {
-		return false
+		return AuthToken{}, err
 	}
 	for _, token := range tokens {
 		if cryptutils.CompareHashAndString(token.Hashed_Token, raw_token) {
-			return true
+			return token, nil
 		}
 	}
-	return false
+	return AuthToken{}, customerrors.NewUnauthorizedError("Invalid token")
 }
 
 // ToJSON converts a user to a JSON object
