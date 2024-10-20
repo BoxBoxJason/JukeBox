@@ -23,6 +23,8 @@ type AuthToken struct {
 	Expiration   int64  `gorm:"type:INTEGER;not null" json:"expiration"`
 	Type         string `gorm:"type:TEXT;default:access" json:"type"`
 	LinkedToken  int    `gorm:"type:INTEGER;default:-1" json:"linked_token"`
+	CreatedAt    int    `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt   int    `gorm:"autoUpdateTime:milli" json:"modified_at"`
 }
 
 // ================ CRUD Operations ================
