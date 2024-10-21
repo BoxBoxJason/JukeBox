@@ -31,12 +31,12 @@ type AuthToken struct {
 // ================ Create ================
 // CreateAuthToken creates a new auth token in the database
 func (auth_token *AuthToken) CreateAuthToken(db *gorm.DB) error {
-	return db.Create(&auth_token).Error
+	return db.Create(auth_token).Error
 }
 
 // CreateAuthTokens creates multiple auth tokens in the database
 func CreateAuthTokens(db *gorm.DB, auth_tokens []*AuthToken) error {
-	return db.Create(&auth_tokens).Error
+	return db.Create(auth_tokens).Error
 }
 
 // ================ Read ================
@@ -48,8 +48,8 @@ func GetAuthTokenByID(db *gorm.DB, id int) (*AuthToken, error) {
 }
 
 // GetUserTokens retrieves all auth tokens for a user from the database
-func (user *User) GetUserTokensByType(db *gorm.DB, token_type string) ([]AuthToken, error) {
-	var tokens []AuthToken
+func (user *User) GetUserTokensByType(db *gorm.DB, token_type string) ([]*AuthToken, error) {
+	var tokens []*AuthToken
 	err := db.Where("user_id = ? AND type = ?", user.ID, token_type).Find(&tokens).Error
 	return tokens, err
 }
@@ -57,26 +57,26 @@ func (user *User) GetUserTokensByType(db *gorm.DB, token_type string) ([]AuthTok
 // ================ Update ================
 // UpdateAuthToken updates an auth token in the database
 func (auth_token *AuthToken) UpdateAuthToken(db *gorm.DB) error {
-	return db.Save(&auth_token).Error
+	return db.Save(auth_token).Error
 }
 
 // ================ Delete ================
 // DeleteAuthToken deletes an auth token from the database
 func (auth_token *AuthToken) DeleteAuthToken(db *gorm.DB) error {
-	return db.Delete(&auth_token).Error
+	return db.Delete(auth_token).Error
 }
 
 // DeleteAuthTokens deletes multiple auth tokens from the database
 func DeleteAuthTokens(db *gorm.DB, auth_tokens []*AuthToken) error {
-	return db.Delete(&auth_tokens).Error
+	return db.Delete(auth_tokens).Error
 }
 
 // DeleteUserTokens deletes all auth tokens for a user from the database
 func (user *User) DeleteUserTokens(db *gorm.DB) error {
-	return db.Where("user_id = ?", user.ID).Delete(&AuthToken{}).Error
+	return db.Where("user_id = ?", user.ID).Delete(AuthToken{}).Error
 }
 
 // DeleteAllTokens deletes all auth tokens from the database
 func DeleteAllTokens(db *gorm.DB) error {
-	return db.Delete(&AuthToken{}).Error
+	return db.Delete(AuthToken{}).Error
 }
