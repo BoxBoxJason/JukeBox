@@ -4,15 +4,11 @@ import (
 	"os"
 
 	"github.com/boxboxjason/jukebox/internal/constants"
-	"github.com/boxboxjason/jukebox/pkg/customerrors"
 	"github.com/boxboxjason/jukebox/pkg/logger"
+	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
-
-func init() {
-	CreateTables()
-}
 
 // Initialize the database connection and create the tables
 func CreateTables() {
@@ -23,7 +19,7 @@ func CreateTables() {
 	defer CloseConnection(db)
 	if !db.Migrator().HasTable(&User{}) {
 		logger.Info("Creating tables")
-		err := db.AutoMigrate(User{}, AuthToken{})
+		err := db.AutoMigrate(&User{}, &AuthToken{})
 		if err != nil {
 			logger.Info("Tables created successfully")
 		} else {
@@ -35,14 +31,14 @@ func CreateTables() {
 // OpenConnection opens a connection to the SQLite database
 func OpenConnection() (*gorm.DB, error) {
 	if _, err := os.Stat(constants.DB_FILE); os.IsNotExist(err) {
-		err = os.Mkdir(constants.DB_DIR, 0600)
+		err = os.Mkdir(constants.DB_DIR, 0700)
 		if err != nil {
 			logger.Critical("Failed to create the database directory", err)
-			return nil, customerrors.NewDatabaseError("Failed to create the database directory")
+			return nil, httputils.NewDatabaseError("Failed to create the database directory")
 		}
 	} else if err != nil {
 		logger.Critical("Failed to check if the database file exists:", err)
-		return nil, customerrors.NewDatabaseError("Failed to check if the database file exists")
+		return nil, httputils.NewDatabaseError("Failed to check if the database file exists")
 	}
 
 	db, err := gorm.Open(sqlite.Open(constants.DB_FILE), &gorm.Config{})
