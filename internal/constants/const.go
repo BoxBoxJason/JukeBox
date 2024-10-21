@@ -11,6 +11,7 @@ var (
 	DB_DIR        = path.Join(JUKEBOX_PATH, "db")
 	DB_FILE       = path.Join(DB_DIR, "jukebox.db")
 	DB_BACKUP_DIR = path.Join(DB_DIR, "backup")
+	LOG_DIR       = path.Join(JUKEBOX_PATH, "logs")
 )
 
 const (
@@ -24,9 +25,4 @@ func init() {
 		fmt.Println("Failed to create Jukebox directory:", err)
 		os.Exit(1)
 	}
-}
-
-// BuildJukeboxPath returns the absolute path to a file in the Jukebox directory.
-func BuildJukeboxPath(relative_path string) string {
-	return path.Join(JUKEBOX_PATH, relative_path)
 }
