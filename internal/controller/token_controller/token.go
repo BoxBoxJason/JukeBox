@@ -4,9 +4,9 @@ import (
 	"time"
 
 	db_model "github.com/boxboxjason/jukebox/internal/model"
-	"github.com/boxboxjason/jukebox/pkg/customerrors"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
+	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"gorm.io/gorm"
 )
 
@@ -38,19 +38,19 @@ func GenerateUserAuthTokens(db *gorm.DB, user *db_model.User) (string, string, e
 	err = refresh_token.UpdateAuthToken(db)
 	if err != nil {
 		logger.Error("Unable to link the refresh token to the access token for user", user.Username)
-		return "", "", customerrors.NewInternalServerError("Unable to link the refresh token to the access token")
+		return "", "", httputils.NewInternalServerError("Unable to link the refresh token to the access token")
 	}
 
 	return access_string, refresh_string, nil
 }
 
 // createUserToken creates a token for the user depending on the token type
-func createUserToken(db *gorm.DB, user *db_model.User, token_type string) (db_model.AuthToken, string, error) {
+func createUserToken(db *gorm.DB, user *db_model.User, token_type string) (*db_model.AuthToken, string, error) {
 	// Open db connection
 	if db == nil {
 		db, err := db_model.OpenConnection()
 		if err != nil {
-			return db_model.AuthToken{}, "", err
+			return &db_model.AuthToken{}, "", err
 		}
 		defer db_model.CloseConnection(db)
 	}
@@ -60,7 +60,7 @@ func createUserToken(db *gorm.DB, user *db_model.User, token_type string) (db_mo
 	string_token, hashed_string_token, err := cryptutils.GenerateHashedToken()
 	if err != nil {
 		logger.Error(err)
-		return db_model.AuthToken{}, "", err
+		return &db_model.AuthToken{}, "", err
 	}
 
 	token := db_model.AuthToken{
@@ -74,10 +74,10 @@ func createUserToken(db *gorm.DB, user *db_model.User, token_type string) (db_mo
 	err = token.CreateAuthToken(db)
 	if err != nil {
 		logger.Error("Unable to create", token_type, "token for user", user.Username)
-		return db_model.AuthToken{}, "", err
+		return &db_model.AuthToken{}, "", err
 	}
 
-	return token, string_token, nil
+	return &token, string_token, nil
 }
 
 // calculateExpirationTime calculates the expiration time of the token
@@ -99,12 +99,12 @@ func RefreshUserAccessToken(db *gorm.DB, user *db_model.User, refresh_token_stri
 	// Check if the refresh token is valid
 	refresh_token, err := user.CheckAuthTokenMatchesByType(db, refresh_token_string, db_model.REFRESH_TOKEN)
 	if err != nil {
-		return "", "", customerrors.NewUnauthorizedError("Invalid refresh token")
+		return "", "", httputils.NewUnauthorizedError("Invalid refresh token")
 	}
 
 	// Check if the refresh token is expired
 	if refresh_token.Expiration < time.Now().Unix() {
-		return "", "", customerrors.NewUnauthorizedError("Refresh token expired")
+		return "", "", httputils.NewUnauthorizedError("Refresh token expired")
 	}
 
 	// Generate a new access token and refresh token for the user
@@ -118,7 +118,7 @@ func RefreshUserAccessToken(db *gorm.DB, user *db_model.User, refresh_token_stri
 	access_token, err := db_model.GetAuthTokenByID(db, refresh_token.LinkedToken)
 	if err != nil {
 		logger.Error("Unable to retrieve the access token linked to the refresh token")
-		return "", "", customerrors.NewNotFoundError("Unable to retrieve the access token linked to the refresh token")
+		return "", "", httputils.NewNotFoundError("Unable to retrieve the access token linked to the refresh token")
 	}
 
 	// Update the access token
@@ -127,7 +127,7 @@ func RefreshUserAccessToken(db *gorm.DB, user *db_model.User, refresh_token_stri
 	err = access_token.UpdateAuthToken(db)
 	if err != nil {
 		logger.Error("Unable to update the access token")
-		return "", "", customerrors.NewInternalServerError("Unable to update the access token")
+		return "", "", httputils.NewInternalServerError("Unable to update the access token")
 	}
 
 	// Generate a new refresh token for the user
@@ -143,7 +143,7 @@ func RefreshUserAccessToken(db *gorm.DB, user *db_model.User, refresh_token_stri
 	err = refresh_token.UpdateAuthToken(db)
 	if err != nil {
 		logger.Error("Unable to update the refresh token")
-		return "", "", customerrors.NewInternalServerError("Unable to update the refresh token")
+		return "", "", httputils.NewInternalServerError("Unable to update the refresh token")
 	}
 
 	return new_access_token_string, new_refresh_token_string, nil
