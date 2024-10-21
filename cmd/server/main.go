@@ -5,6 +5,8 @@ import (
 	"path"
 
 	"github.com/boxboxjason/jukebox/internal/api"
+	"github.com/boxboxjason/jukebox/internal/constants"
+	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,7 +14,11 @@ import (
 
 func main() {
 	// Setup the logger
-	logger.SetupLogger("logs", "INFO")
+	logger.SetupLogger(constants.LOG_DIR, "DEBUG")
+
+	// Initialize the database
+	db_model.CreateTables()
+
 	// Create new main router
 	main_router := chi.NewRouter()
 
@@ -36,7 +42,7 @@ func main() {
 	err := http.ListenAndServeTLS(":3000", "secret/cert.pem", "secret/key.pem", main_router)
 	if err != nil {
 		logger.Critical("Unable to start the server using TLS: ", err)
-		logger.Debug("Starting the server without TLS at http://localhost:3000")
+		logger.Info("Starting the server without TLS at http://localhost:3000")
 		err = http.ListenAndServe(":3000", main_router)
 		if err != nil {
 			logger.Fatal("Unable to start the server", err)
