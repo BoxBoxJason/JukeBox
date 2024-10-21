@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	// Setup the logger
+	logger.SetupLogger("logs", "INFO")
 	// Create new main router
 	main_router := chi.NewRouter()
 

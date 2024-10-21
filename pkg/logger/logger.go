@@ -1,12 +1,14 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"path"
+	"strings"
+	"sync"
 
-	"github.com/boxboxjason/jukebox/pkg/static"
 	"github.com/boxboxjason/jukebox/pkg/utils/fileutils"
 	"github.com/boxboxjason/jukebox/pkg/utils/timeutils"
 )
@@ -15,11 +17,36 @@ const (
 	MAX_LOG_SIZE = 1024 * 1024 * 10 // 10 MB
 )
 
+// Setup the logger to simple STDOUT logging for now
+func init() {
+	debugLogger = log.New(os.Stdout, "DEBUG: ", log.Ldate|log.Ltime)
+	infoLogger = log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime)
+	errorLogger = log.New(os.Stdout, "ERROR: ", log.Ldate|log.Ltime)
+	criticalLogger = log.New(os.Stdout, "CRITICAL: ", log.Ldate|log.Ltime)
+	fatalLogger = log.New(os.Stdout, "FATAL: ", log.Ldate|log.Ltime)
+}
+
 // Logger instances
 var (
-	LOG_DIR        = static.BuildJukeboxPath("logs")
-	LOG_FILE       = path.Join(LOG_DIR, "server.log")
-	LOG_ROTATE_ZIP = path.Join(LOG_DIR, "rotate.zip")
+	// Logging directories and files
+	LOG_DIR        string
+	LOG_FILE       string
+	LOG_ROTATE_ZIP string
+	// Logging levels
+	LOG_LEVEL  int = 1
+	LOG_LEVELS     = map[string]int{
+		"DEBUG":    0,
+		"INFO":     1,
+		"ERROR":    2,
+		"CRITICAL": 3,
+		"FATAL":    4,
+	}
+	// Mutexes
+	mu_LOG_DIR        = &sync.RWMutex{}
+	mu_LOG_FILE       = &sync.RWMutex{}
+	mu_LOG_ROTATE_ZIP = &sync.RWMutex{}
+	mu_LOG_LEVEL      = &sync.RWMutex{}
+	// Loggers
 	debugLogger    *log.Logger
 	infoLogger     *log.Logger
 	errorLogger    *log.Logger
@@ -27,13 +54,35 @@ var (
 	fatalLogger    *log.Logger
 )
 
-func init() {
+func SetupLogger(log_dir string, log_level string) {
+	// Lock the mutexes
+	mu_LOG_DIR.RLock()
+	mu_LOG_FILE.RLock()
+	mu_LOG_ROTATE_ZIP.RLock()
+	defer mu_LOG_DIR.RUnlock()
+	defer mu_LOG_FILE.RUnlock()
+	defer mu_LOG_ROTATE_ZIP.RUnlock()
+	// Set the logging directories and files
+	LOG_DIR = log_dir
+	LOG_FILE = path.Join(LOG_DIR, "server.log")
+	LOG_ROTATE_ZIP = path.Join(LOG_DIR, "rotate.zip")
+
+	// Set the logging level
+	mu_LOG_LEVEL.Lock()
+	defer mu_LOG_LEVEL.Unlock()
+	if _, ok := LOG_LEVELS[strings.ToUpper(log_level)]; !ok {
+		fmt.Println("Invalid log level:", log_level, "Defaulting to INFO")
+		LOG_LEVEL = LOG_LEVELS["INFO"]
+	} else {
+		LOG_LEVEL = LOG_LEVELS[strings.ToUpper(log_level)]
+	}
+
 	// Check if the directory for the log directory exists
 	if _, err := os.Stat(LOG_DIR); os.IsNotExist(err) {
 		os.Mkdir(LOG_DIR, os.ModePerm)
 	}
 
-	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
 	if err != nil {
 		log.Fatalln("Failed to open log file:", err)
 	}
@@ -50,27 +99,37 @@ func init() {
 
 // Debug logs a debug message.
 func Debug(v ...interface{}) {
-	debugLogger.Println(v...)
+	if LOG_LEVEL <= 0 {
+		debugLogger.Println(v...)
+	}
 }
 
 // Info logs an info message.
 func Info(v ...interface{}) {
-	infoLogger.Println(v...)
+	if LOG_LEVEL <= 1 {
+		infoLogger.Println(v...)
+	}
 }
 
 // Error logs an error message.
 func Error(v ...interface{}) {
-	errorLogger.Println(v...)
+	if LOG_LEVEL <= 2 {
+		errorLogger.Println(v...)
+	}
 }
 
 // Critical logs a critical message but does not exit the application.
 func Critical(v ...interface{}) {
-	criticalLogger.Println(v...)
+	if LOG_LEVEL <= 3 {
+		criticalLogger.Println(v...)
+	}
 }
 
 // Fatal logs a fatal message and exits the application.
 func Fatal(v ...interface{}) {
-	fatalLogger.Fatalln(v...)
+	if LOG_LEVEL <= 4 {
+		fatalLogger.Println(v...)
+	}
 	os.Exit(1)
 }
 
