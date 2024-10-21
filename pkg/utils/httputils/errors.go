@@ -1,4 +1,4 @@
-package customerrors
+package httputils
 
 import "net/http"
 
@@ -90,3 +90,12 @@ func NewServiceUnavailableError(message string) *ServiceUnavailableError {
 }
 func (e *ServiceUnavailableError) Error() string   { return e.Message }
 func (e *ServiceUnavailableError) StatusCode() int { return http.StatusServiceUnavailable }
+
+// SendErrorToClient sends an error to the client
+func SendErrorToClient(w http.ResponseWriter, err error) {
+	if http_err, ok := err.(HTTPError); ok {
+		http.Error(w, http_err.Error(), http_err.StatusCode())
+	} else {
+		http.Error(w, "unexpected error, the issue was logged", http.StatusInternalServerError)
+	}
+}

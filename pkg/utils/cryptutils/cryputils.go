@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/boxboxjason/jukebox/pkg/customerrors"
+	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -35,11 +35,11 @@ func GenerateToken() (string, error) {
 func GenerateHashedToken() (string, string, error) {
 	token, err := GenerateToken()
 	if err != nil {
-		return "", "", customerrors.NewInternalServerError("Unable to generate token")
+		return "", "", httputils.NewInternalServerError("Unable to generate token")
 	}
 	hashed_token, err := HashString(token)
 	if err != nil {
-		return "", "", customerrors.NewInternalServerError("Unable to hash token")
+		return "", "", httputils.NewInternalServerError("Unable to hash token")
 	}
 	return token, hashed_token, nil
 }
