@@ -6,9 +6,9 @@ import (
 
 	"github.com/boxboxjason/jukebox/internal/controller/token_controller"
 	db_model "github.com/boxboxjason/jukebox/internal/model"
-	"github.com/boxboxjason/jukebox/pkg/customerrors"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
+	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 )
 
 var (
@@ -40,13 +40,13 @@ func CreateUser(username string, email string, password string) error {
 		invalid_fields = append(invalid_fields, "password")
 	}
 	if len(invalid_fields) > 0 {
-		return customerrors.NewBadRequestError("Invalid fields: " + strings.Join(invalid_fields, ", "))
+		return httputils.NewBadRequestError("Invalid fields: " + strings.Join(invalid_fields, ", "))
 	}
 
 	hashed_password, err := cryptutils.HashString(password)
 	if err != nil {
 		logger.Error("Unable to hash the password during user creation", err)
-		return customerrors.NewInternalServerError("Unable to hash the password")
+		return httputils.NewInternalServerError("Unable to hash the password")
 	}
 
 	user := db_model.User{
@@ -65,11 +65,11 @@ func CreateUser(username string, email string, password string) error {
 	// Check if user already exists
 	_, err = db_model.GetUserByUsername(db, username)
 	if err == nil {
-		return customerrors.NewConflictError("Username already exists")
+		return httputils.NewConflictError("Username already exists")
 	}
 	_, err = db_model.GetUserByEmail(db, email)
 	if err == nil {
-		return customerrors.NewConflictError("Email already exists")
+		return httputils.NewConflictError("Email already exists")
 	}
 
 	// Create user
@@ -95,7 +95,7 @@ func GetUser(id int) (map[string]interface{}, error) {
 
 	user, err := db_model.GetUserByID(db, id)
 	if err != nil {
-		return nil, customerrors.NewNotFoundError("User not found")
+		return nil, httputils.NewNotFoundError("User not found")
 	}
 
 	return user.ToJSON(), nil
@@ -112,7 +112,7 @@ func GetUsersByPartialUsername(partial_username string) ([]map[string]interface{
 
 	users, err := db_model.GetUsersByUsername(db, partial_username)
 	if err != nil {
-		return nil, customerrors.NewNotFoundError("User not found")
+		return nil, httputils.NewNotFoundError("User not found")
 	}
 
 	users_json := make([]map[string]interface{}, len(users))
@@ -134,7 +134,7 @@ func GetAllUsers() ([]map[string]interface{}, error) {
 
 	users, err := db_model.GetAllUsers(db)
 	if err != nil {
-		return nil, customerrors.NewNotFoundError("User not found")
+		return nil, httputils.NewNotFoundError("User not found")
 	}
 
 	users_json := make([]map[string]interface{}, len(users))
@@ -158,12 +158,12 @@ func LoginUserFromPassword(username_or_email string, password string) (string, s
 	// Retrieve the user (if it exists)
 	user, err := db_model.GetUserByUsernameOREmail(db, username_or_email)
 	if err != nil {
-		return "", "", customerrors.NewUnauthorizedError("Invalid credentials combination")
+		return "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
 	}
 
 	// Check if the password matches
 	if !user.CheckPasswordMatches(password) {
-		return "", "", customerrors.NewUnauthorizedError("Invalid credentials combination")
+		return "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
 	}
 
 	// Generate the user's auth token
@@ -186,13 +186,13 @@ func LoginFromToken(user_id int, token_string string) error {
 	// Retrieve the user
 	user, err := db_model.GetUserByID(db, user_id)
 	if err != nil {
-		return customerrors.NewUnauthorizedError("Invalid token")
+		return httputils.NewUnauthorizedError("Invalid token")
 	}
 
 	// Check if the token matches
 	_, err = user.CheckAuthTokenMatchesByType(db, token_string, db_model.ACCESS_TOKEN)
 	if err != nil {
-		return customerrors.NewUnauthorizedError("Invalid token")
+		return httputils.NewUnauthorizedError("Invalid token")
 	}
 
 	return nil
