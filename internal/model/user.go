@@ -1,8 +1,8 @@
 package db_model
 
 import (
-	"github.com/boxboxjason/jukebox/pkg/customerrors"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
+	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"gorm.io/gorm"
 )
 
@@ -11,6 +11,7 @@ type User struct {
 	Username           string `gorm:"type:TEXT;unique;not null" json:"username"`
 	Hashed_Password    string `gorm:"type:TEXT;not null" json:"hashed_password"`
 	Email              string `gorm:"type:TEXT;unique;not null" json:"email"`
+	Avatar             string `gorm:"type:TEXT;default:'default_avatar.png'" json:"avatar"`
 	Admin              bool   `gorm:"type:BOOLEAN;not null;default:false" json:"admin"`
 	Banned             bool   `gorm:"type:BOOLEAN;not null;default:false" json:"banned"`
 	TotalContributions int    `gorm:"type:INTEGER;not null;default:0" json:"total_contributions"`
@@ -38,42 +39,42 @@ func CreateUsers(db *gorm.DB, users []*User) error {
 // GetUserByID retrieves a user from the database by ID
 func GetUserByID(db *gorm.DB, id int) (*User, error) {
 	user := &User{}
-	err := db.First(&user, id).Error
+	err := db.First(user, id).Error
 	return user, err
 }
 
 // GetUserByUsername retrieves a user from the database by username
 func GetUserByUsername(db *gorm.DB, username string) (*User, error) {
 	user := &User{}
-	err := db.Where("username = ?", username).First(&user).Error
+	err := db.Where("username = ?", username).First(user).Error
 	return user, err
 }
 
 // GetUserByEmail retrieves a user from the database by email
 func GetUserByEmail(db *gorm.DB, email string) (*User, error) {
 	user := &User{}
-	err := db.Where("email = ?", email).First(&user).Error
+	err := db.Where("email = ?", email).First(user).Error
 	return user, err
 }
 
 // GetUserByUsernameOREmail retrieves a user from the database by username or email
 func GetUserByUsernameOREmail(db *gorm.DB, username_or_email string) (*User, error) {
 	user := &User{}
-	err := db.Where("username = ? OR email = ?", username_or_email, username_or_email).First(&user).Error
+	err := db.Where("username = ? OR email = ?", username_or_email, username_or_email).First(user).Error
 	return user, err
 }
 
 // GetUsersByUsername retrieves all users which username partially matches the given username
 func GetUsersByUsername(db *gorm.DB, username string) ([]*User, error) {
 	users := []*User{}
-	err := db.Where("username LIKE ?", "%"+username+"%").Find(&users).Error
+	err := db.Where("username LIKE ?", "%"+username+"%").Find(users).Error
 	return users, err
 }
 
 // GetAllUsers retrieves all users from the database
 func GetAllUsers(db *gorm.DB) ([]*User, error) {
 	users := []*User{}
-	err := db.Find(&users).Error
+	err := db.Find(users).Error
 	return users, err
 }
 
@@ -111,17 +112,17 @@ func (user *User) CheckPasswordMatches(password string) bool {
 	return cryptutils.CompareHashAndString(user.Hashed_Password, password)
 }
 
-func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, token_type string) (AuthToken, error) {
+func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, token_type string) (*AuthToken, error) {
 	tokens, err := user.GetUserTokensByType(db, token_type)
 	if err != nil {
-		return AuthToken{}, err
+		return &AuthToken{}, err
 	}
 	for _, token := range tokens {
 		if cryptutils.CompareHashAndString(token.Hashed_Token, raw_token) {
 			return token, nil
 		}
 	}
-	return AuthToken{}, customerrors.NewUnauthorizedError("Invalid token")
+	return &AuthToken{}, httputils.NewUnauthorizedError("Invalid token")
 }
 
 // ToJSON converts a user to a JSON object
@@ -129,34 +130,46 @@ func (user *User) ToJSON() map[string]interface{} {
 	return map[string]interface{}{
 		"id":                  user.ID,
 		"username":            user.Username,
+		"avatar":              user.Avatar,
 		"admin":               user.Admin,
 		"banned":              user.Banned,
 		"total_contributions": user.TotalContributions,
 		"minutes_listened":    user.MinutesListened,
 		"subscriber_tier":     user.Subscriber_Tier,
+		"created_at":          user.CreatedAt,
+		"modified_at":         user.ModifiedAt,
 	}
+}
+
+// UsersToJSON converts a list of users to a JSON object
+func UsersToJSON(users []*User) []map[string]interface{} {
+	users_json := make([]map[string]interface{}, len(users))
+	for i, user := range users {
+		users_json[i] = user.ToJSON()
+	}
+	return users_json
 }
 
 // ================ Update ================
 
 // UpdateUser updates a user in the database
 func (user *User) UpdateUser(db *gorm.DB) error {
-	return db.Save(&user).Error
+	return db.Save(user).Error
 }
 
 // UpdateUsers updates multiple users in the database
 func UpdateUsers(db *gorm.DB, users []*User) error {
-	return db.Save(&users).Error
+	return db.Save(users).Error
 }
 
 // ================ Delete ================
 
 // DeleteUser deletes a user from the database
 func (user *User) DeleteUser(db *gorm.DB) error {
-	return db.Delete(&user).Error
+	return db.Delete(user).Error
 }
 
 // DeleteUsers deletes multiple users from the database
 func DeleteUsers(db *gorm.DB, users []*User) error {
-	return db.Delete(&users).Error
+	return db.Delete(users).Error
 }
