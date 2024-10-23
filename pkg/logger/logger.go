@@ -56,12 +56,12 @@ var (
 
 func SetupLogger(log_dir string, log_level string) {
 	// Lock the mutexes
-	mu_LOG_DIR.RLock()
-	mu_LOG_FILE.RLock()
-	mu_LOG_ROTATE_ZIP.RLock()
-	defer mu_LOG_DIR.RUnlock()
-	defer mu_LOG_FILE.RUnlock()
-	defer mu_LOG_ROTATE_ZIP.RUnlock()
+	mu_LOG_DIR.Lock()
+	mu_LOG_FILE.Lock()
+	mu_LOG_ROTATE_ZIP.Lock()
+	defer mu_LOG_DIR.Unlock()
+	defer mu_LOG_FILE.Unlock()
+	defer mu_LOG_ROTATE_ZIP.Unlock()
 	// Set the logging directories and files
 	LOG_DIR = log_dir
 	LOG_FILE = path.Join(LOG_DIR, "server.log")
@@ -84,7 +84,8 @@ func SetupLogger(log_dir string, log_level string) {
 
 	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
 	if err != nil {
-		log.Fatalln("Failed to open log file:", err)
+		fmt.Println("Fatal error: Failed to open log file:", err)
+		os.Exit(1)
 	}
 
 	multi := io.MultiWriter(file, os.Stdout)
