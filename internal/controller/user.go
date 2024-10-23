@@ -1,10 +1,9 @@
-package user_controller
+package db_controller
 
 import (
 	"regexp"
 	"strings"
 
-	"github.com/boxboxjason/jukebox/internal/controller/token_controller"
 	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
@@ -23,7 +22,7 @@ var (
 
 // CreateUser creates a new user in the database after checking the validity of the input fields
 // And the uniqueness of the username and email
-func CreateUser(username string, email string, password string) error {
+func CreateUser(username string, email string, password string) (*db_model.User, error) {
 	// Validate user input
 	valid_username := VALID_USERNAME.MatchString(username)
 	valid_email := VALID_EMAIL.MatchString(email)
@@ -40,13 +39,13 @@ func CreateUser(username string, email string, password string) error {
 		invalid_fields = append(invalid_fields, "password")
 	}
 	if len(invalid_fields) > 0 {
-		return httputils.NewBadRequestError("Invalid fields: " + strings.Join(invalid_fields, ", "))
+		return &db_model.User{}, httputils.NewBadRequestError("Invalid fields: " + strings.Join(invalid_fields, ", "))
 	}
 
 	hashed_password, err := cryptutils.HashString(password)
 	if err != nil {
 		logger.Error("Unable to hash the password during user creation", err)
-		return httputils.NewInternalServerError("Unable to hash the password")
+		return &db_model.User{}, httputils.NewInternalServerError("Unable to hash the password")
 	}
 
 	user := db_model.User{
@@ -58,18 +57,18 @@ func CreateUser(username string, email string, password string) error {
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
-		return err
+		return &db_model.User{}, err
 	}
 	defer db_model.CloseConnection(db)
 
 	// Check if user already exists
 	_, err = db_model.GetUserByUsername(db, username)
 	if err == nil {
-		return httputils.NewConflictError("Username already exists")
+		return &db_model.User{}, httputils.NewConflictError("Username already exists")
 	}
 	_, err = db_model.GetUserByEmail(db, email)
 	if err == nil {
-		return httputils.NewConflictError("Email already exists")
+		return &db_model.User{}, httputils.NewConflictError("Email already exists")
 	}
 
 	// Create user
@@ -79,13 +78,13 @@ func CreateUser(username string, email string, password string) error {
 	} else {
 		logger.Info("User", username, "created successfully")
 	}
-	return err
+	return &user, err
 }
 
 // ================= Read =================
 
 // GetUser retrieves a user from the database by ID
-func GetUser(id int) (map[string]interface{}, error) {
+func GetUser(id int) (*db_model.User, error) {
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
@@ -98,11 +97,11 @@ func GetUser(id int) (map[string]interface{}, error) {
 		return nil, httputils.NewNotFoundError("User not found")
 	}
 
-	return user.ToJSON(), nil
+	return user, nil
 }
 
 // GetUserByPartialUsername retrieves a user from the database by partial username
-func GetUsersByPartialUsername(partial_username string) ([]map[string]interface{}, error) {
+func GetUsersByPartialUsername(partial_username string) ([]*db_model.User, error) {
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
@@ -110,21 +109,11 @@ func GetUsersByPartialUsername(partial_username string) ([]map[string]interface{
 	}
 	defer db_model.CloseConnection(db)
 
-	users, err := db_model.GetUsersByUsername(db, partial_username)
-	if err != nil {
-		return nil, httputils.NewNotFoundError("User not found")
-	}
-
-	users_json := make([]map[string]interface{}, len(users))
-	for i, user := range users {
-		users_json[i] = user.ToJSON()
-	}
-
-	return users_json, nil
+	return db_model.GetUsersByUsername(db, partial_username)
 }
 
 // GetAllUsers retrieves all users from the database
-func GetAllUsers() ([]map[string]interface{}, error) {
+func GetAllUsers() ([]*db_model.User, error) {
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
@@ -132,70 +121,7 @@ func GetAllUsers() ([]map[string]interface{}, error) {
 	}
 	defer db_model.CloseConnection(db)
 
-	users, err := db_model.GetAllUsers(db)
-	if err != nil {
-		return nil, httputils.NewNotFoundError("User not found")
-	}
-
-	users_json := make([]map[string]interface{}, len(users))
-	for i, user := range users {
-		users_json[i] = user.ToJSON()
-	}
-
-	return users_json, nil
-}
-
-// LoginUserFromPassword logs in a user by checking the validity of the input fields
-// And the correctness of the username and password
-func LoginUserFromPassword(username_or_email string, password string) (string, string, error) {
-	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return "", "", err
-	}
-	defer db_model.CloseConnection(db)
-
-	// Retrieve the user (if it exists)
-	user, err := db_model.GetUserByUsernameOREmail(db, username_or_email)
-	if err != nil {
-		return "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
-	}
-
-	// Check if the password matches
-	if !user.CheckPasswordMatches(password) {
-		return "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
-	}
-
-	// Generate the user's auth token
-	access_token, refresh_token, err := token_controller.GenerateUserAuthTokens(db, user)
-	if err != nil {
-		return "", "", err
-	}
-
-	return access_token, refresh_token, nil
-}
-
-func LoginFromToken(user_id int, token_string string) error {
-	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return err
-	}
-	defer db_model.CloseConnection(db)
-
-	// Retrieve the user
-	user, err := db_model.GetUserByID(db, user_id)
-	if err != nil {
-		return httputils.NewUnauthorizedError("Invalid token")
-	}
-
-	// Check if the token matches
-	_, err = user.CheckAuthTokenMatchesByType(db, token_string, db_model.ACCESS_TOKEN)
-	if err != nil {
-		return httputils.NewUnauthorizedError("Invalid token")
-	}
-
-	return nil
+	return db_model.GetAllUsers(db)
 }
 
 // ================= Update =================
