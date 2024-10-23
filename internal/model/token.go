@@ -1,19 +1,7 @@
 package db_model
 
-import "gorm.io/gorm"
-
-const (
-	ACCESS_TOKEN                   = "access"
-	REFRESH_TOKEN                  = "refresh"
-	ACCESS_TOKEN_EXPIRATION  int64 = 4 * 60 * 60      // 4 hours
-	REFRESH_TOKEN_EXPIRATION int64 = 7 * 24 * 60 * 60 // 7 days
-)
-
-var (
-	TOKEN_EXPIRATION_MAP = map[string]int64{
-		ACCESS_TOKEN:  ACCESS_TOKEN_EXPIRATION,
-		REFRESH_TOKEN: REFRESH_TOKEN_EXPIRATION,
-	}
+import (
+	"gorm.io/gorm"
 )
 
 type AuthToken struct {
@@ -52,6 +40,12 @@ func (user *User) GetUserTokensByType(db *gorm.DB, token_type string) ([]*AuthTo
 	var tokens []*AuthToken
 	err := db.Where("user_id = ? AND type = ?", user.ID, token_type).Find(&tokens).Error
 	return tokens, err
+}
+
+func (auth_token *AuthToken) GetLinkedToken(db *gorm.DB) (*AuthToken, error) {
+	linked_token := &AuthToken{}
+	err := db.First(&linked_token, auth_token.LinkedToken).Error
+	return linked_token, err
 }
 
 // ================ Update ================
