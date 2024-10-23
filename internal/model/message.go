@@ -19,12 +19,12 @@ type Message struct {
 
 // CreateMessage creates a new message in the database
 func (message *Message) CreateMessage(db *gorm.DB) error {
-	return db.Create(&message).Error
+	return db.Create(message).Error
 }
 
 // CreateMessages creates multiple messages in the database
 func CreateMessages(db *gorm.DB, messages []*Message) error {
-	return db.Create(&messages).Error
+	return db.Create(messages).Error
 }
 
 // ================ Read ================
@@ -122,27 +122,6 @@ func (user *User) GetCensoredMessages(db *gorm.DB) ([]*Message, error) {
 	var messages []*Message
 	err := db.Preload("Sender").Where("sender_id = ? AND censored = ?", user.ID, true).Find(&messages).Error
 	return messages, err
-}
-
-// ToJSON converts a message to a JSON-serializable format
-func (message *Message) ToJSON() map[string]interface{} {
-	return map[string]interface{}{
-		"id":          message.ID,
-		"sender":      message.Sender.ToJSON(),
-		"content":     message.Content,
-		"flagged":     message.Flagged,
-		"created_at":  message.CreatedAt,
-		"modified_at": message.ModifiedAt,
-	}
-}
-
-// MessagesToJSON converts a list of messages to a JSON-serializable format
-func MessagesToJSON(messages []*Message) []map[string]interface{} {
-	var messages_json []map[string]interface{}
-	for _, message := range messages {
-		messages_json = append(messages_json, message.ToJSON())
-	}
-	return messages_json
 }
 
 // ================ Update ================
