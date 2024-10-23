@@ -9,8 +9,8 @@ import (
 type User struct {
 	ID                 int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	Username           string `gorm:"type:TEXT;unique;not null" json:"username"`
-	Hashed_Password    string `gorm:"type:TEXT;not null" json:"hashed_password"`
-	Email              string `gorm:"type:TEXT;unique;not null" json:"email"`
+	Hashed_Password    string `gorm:"type:TEXT;not null" json:"-"`
+	Email              string `gorm:"type:TEXT;unique;not null" json:"-"`
 	Avatar             string `gorm:"type:TEXT;default:'default_avatar.png'" json:"avatar"`
 	Admin              bool   `gorm:"type:BOOLEAN;not null;default:false" json:"admin"`
 	Banned             bool   `gorm:"type:BOOLEAN;not null;default:false" json:"banned"`
@@ -26,7 +26,7 @@ type User struct {
 
 // CreateUser creates a new user in the database
 func (user *User) CreateUser(db *gorm.DB) error {
-	return db.Create(&user).Error
+	return db.Create(user).Error
 }
 
 // CreateUsers creates multiple users in the database
@@ -123,31 +123,6 @@ func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, tok
 		}
 	}
 	return &AuthToken{}, httputils.NewUnauthorizedError("Invalid token")
-}
-
-// ToJSON converts a user to a JSON object
-func (user *User) ToJSON() map[string]interface{} {
-	return map[string]interface{}{
-		"id":                  user.ID,
-		"username":            user.Username,
-		"avatar":              user.Avatar,
-		"admin":               user.Admin,
-		"banned":              user.Banned,
-		"total_contributions": user.TotalContributions,
-		"minutes_listened":    user.MinutesListened,
-		"subscriber_tier":     user.Subscriber_Tier,
-		"created_at":          user.CreatedAt,
-		"modified_at":         user.ModifiedAt,
-	}
-}
-
-// UsersToJSON converts a list of users to a JSON object
-func UsersToJSON(users []*User) []map[string]interface{} {
-	users_json := make([]map[string]interface{}, len(users))
-	for i, user := range users {
-		users_json[i] = user.ToJSON()
-	}
-	return users_json
 }
 
 // ================ Update ================
