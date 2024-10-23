@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,10 +11,6 @@ import (
 	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 )
-
-type contextKey string
-
-const UserContextKey contextKey = "user"
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,9 +36,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		_, err = user.CheckAuthTokenMatchesByType(db, access_token, db_model.ACCESS_TOKEN)
+		db_access_token, err := user.CheckAuthTokenMatchesByType(db, access_token, constants.ACCESS_TOKEN)
 		if err == nil {
-			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			// Attach the user to the request context
+			ctx := context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, user)
+			// Attach the access token to the request context
+			ctx = context.WithValue(ctx, constants.ACCESS_TOKEN_CONTEXT_KEY, db_access_token)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
 			httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("Invalid access token"))
@@ -51,11 +51,61 @@ func AuthMiddleware(next http.Handler) http.Handler {
 }
 
 func getUserIDAndAccessToken(r *http.Request) (int, string, error) {
-	identity, err := httputils.RetrieveAuthorizationToken(r, constants.AUTH_SCHEME+" ")
+	identity_bearer, err := readAccessCookie(r)
+	if err != nil {
+		identity_bearer, err = httputils.RetrieveAuthorizationToken(r, constants.AUTH_SCHEME+" ")
+		if err != nil {
+			return -1, "", err
+		}
+	}
+
+	user_id, access_token, err := DecodeIdentityBearerToUserAndToken(identity_bearer)
 	if err != nil {
 		return -1, "", err
 	}
-	parts := strings.Split(identity, ":")
+	return user_id, access_token, nil
+}
+
+func GetUserIDAndRefreshToken(r *http.Request) (int, string, error) {
+	identity_bearer, err := readRefreshCookie(r)
+	if err != nil {
+		identity_bearer, err = httputils.RetrieveAuthorizationToken(r, constants.AUTH_SCHEME+" ")
+		if err != nil {
+			return -1, "", err
+		}
+	}
+
+	user_id, refresh_token, err := DecodeIdentityBearerToUserAndToken(identity_bearer)
+	if err != nil {
+		return -1, "", err
+	}
+	return user_id, refresh_token, nil
+}
+
+func readAccessCookie(r *http.Request) (string, error) {
+	cookie, err := httputils.ReadCookie(r, constants.ACCESS_TOKEN_COOKIE_NAME)
+	if err != nil {
+		return "", httputils.NewUnauthorizedError("access token not found")
+	}
+	return cookie, nil
+}
+
+func readRefreshCookie(r *http.Request) (string, error) {
+	cookie, err := httputils.ReadCookie(r, constants.REFRESH_TOKEN_COOKIE_NAME)
+	if err != nil {
+		return "", httputils.NewUnauthorizedError("refresh token not found")
+	}
+	return cookie, nil
+}
+
+func DecodeIdentityBearerToUserAndToken(identity_bearer string) (int, string, error) {
+	// Decode the base64 encoded identity bearer
+	decoded_bearer, err := base64.StdEncoding.DecodeString(identity_bearer)
+	if err != nil {
+		return -1, "", httputils.NewUnauthorizedError("Invalid identity bearer")
+	}
+
+	parts := strings.Split(string(decoded_bearer), ":")
 	if len(parts) != 2 {
 		return -1, "", httputils.NewUnauthorizedError("Invalid identity format")
 	}
@@ -64,4 +114,9 @@ func getUserIDAndAccessToken(r *http.Request) (int, string, error) {
 		return -1, "", httputils.NewUnauthorizedError("Invalid user ID")
 	}
 	return user_id, parts[1], nil
+}
+
+func EncodeUserAndTokenToIdentityBearer(user_id int, access_token string) string {
+	// Encode the user ID and access token to base64
+	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(user_id) + ":" + access_token))
 }
