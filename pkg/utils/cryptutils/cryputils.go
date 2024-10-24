@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
+	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,23 +24,25 @@ func CompareHashAndString(hashed_string string, raw_string string) bool {
 }
 
 // GenerateToken generates a cryptographically secure token
-func GenerateToken() (string, error) {
+func GenerateToken() ([]byte, error) {
 	token := make([]byte, 64)
 	_, err := rand.Read(token)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
-	return hex.EncodeToString(token), nil
+	return token, nil
 }
 
 func GenerateHashedToken() (string, string, error) {
 	token, err := GenerateToken()
 	if err != nil {
+		logger.Error("Unable to generate token", err)
 		return "", "", httputils.NewInternalServerError("Unable to generate token")
 	}
-	hashed_token, err := HashString(token)
+	hashed_token, err := HashString(string(token))
 	if err != nil {
+		logger.Error("Unable to hash token", err)
 		return "", "", httputils.NewInternalServerError("Unable to hash token")
 	}
-	return token, hashed_token, nil
+	return hex.EncodeToString(token), hashed_token, nil
 }
