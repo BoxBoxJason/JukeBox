@@ -17,20 +17,20 @@ func CreateTables() {
 		logger.Fatal("Failed to open the database connection")
 	}
 	defer CloseConnection(db)
-	if !db.Migrator().HasTable(&User{}) {
-		logger.Info("Creating tables")
-		err := db.AutoMigrate(&User{}, &AuthToken{})
+	logger.Info("Creating tables")
+	if !db.Migrator().HasTable(&User{}) || !db.Migrator().HasTable(&AuthToken{}) || !db.Migrator().HasTable(&Message{}) {
+		err = db.AutoMigrate(&User{}, &AuthToken{}, &Message{})
 		if err != nil {
-			logger.Info("Tables created successfully")
-		} else {
 			logger.Fatal("Failed to create tables:", err)
+		} else {
+			logger.Info("Tables created successfully")
 		}
 	}
 }
 
 // OpenConnection opens a connection to the SQLite database
 func OpenConnection() (*gorm.DB, error) {
-	if _, err := os.Stat(constants.DB_FILE); os.IsNotExist(err) {
+	if _, err := os.Stat(constants.DB_DIR); os.IsNotExist(err) {
 		err = os.Mkdir(constants.DB_DIR, 0700)
 		if err != nil {
 			logger.Critical("Failed to create the database directory", err)

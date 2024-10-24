@@ -7,6 +7,7 @@ import (
 type AuthToken struct {
 	ID           int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	User         User   `gorm:"foreignKey:UserID" json:"user"`
+	UserID       int    `gorm:"type:INTEGER;not null" json:"-"`
 	Hashed_Token string `gorm:"type:TEXT;unique;not null" json:"hashed_token"`
 	Expiration   int64  `gorm:"type:INTEGER;not null" json:"expiration"`
 	Type         string `gorm:"type:TEXT;default:access" json:"type"`
