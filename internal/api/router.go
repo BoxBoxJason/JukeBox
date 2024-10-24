@@ -15,6 +15,7 @@ func ApiRouter() chi.Router {
 	SetupMessagesRoutes(api_router)
 	SetUsersRoutes(api_router)
 	SetupMiscRoutes(api_router)
+	SetupAuthRoutes(api_router)
 
 	return api_router
 }
