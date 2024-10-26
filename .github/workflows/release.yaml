@@ -42,7 +42,7 @@ jobs:
           go-version: 1.22
 
       - name: Build
-        run: go mod tidy && go build -o jukebox_${{ matrix.os }}_${{ matrix.arch }} cmd/server/main.go
+        run: go mod tidy && go build -ldflags "-X github.com/boxboxjason/jukebox/internal/constants.JUKEBOX_VERSION=${{ github.ref_name }}" -o jukebox_${{ matrix.os }}_${{ matrix.arch }} cmd/server/main.go
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
