@@ -519,12 +519,12 @@ func TestGetRemovedMessages(t *testing.T) {
 		{
 			Content: "test_content_21",
 			Sender:  *user,
-			Flagged: true,
+			Removed: true,
 		},
 		{
 			Content: "test_content_22",
 			Sender:  *user,
-			Flagged: true,
+			Removed: true,
 		},
 	}
 
@@ -568,12 +568,12 @@ func TestGetRemovedMessagesBySender(t *testing.T) {
 		{
 			Content: "test_content_23",
 			Sender:  *user,
-			Flagged: true,
+			Removed: true,
 		},
 		{
 			Content: "test_content_24",
 			Sender:  *user,
-			Flagged: true,
+			Removed: true,
 		},
 	}
 

@@ -66,14 +66,14 @@ func GetUserByUsernameOREmail(db *gorm.DB, username_or_email string) (*User, err
 // GetUsersByUsername retrieves all users which username partially matches the given username
 func GetUsersByUsername(db *gorm.DB, username string) ([]*User, error) {
 	users := []*User{}
-	err := db.Where("username LIKE ?", "%"+username+"%").Find(users).Error
+	err := db.Where("username LIKE ?", "%"+username+"%").Find(&users).Error
 	return users, err
 }
 
 // GetAllUsers retrieves all users from the database
 func GetAllUsers(db *gorm.DB) ([]*User, error) {
 	users := []*User{}
-	err := db.Find(users).Error
+	err := db.Find(&users).Error
 	return users, err
 }
 
