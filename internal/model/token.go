@@ -1,6 +1,8 @@
 package db_model
 
 import (
+	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
+	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"gorm.io/gorm"
 )
 
@@ -47,6 +49,19 @@ func (auth_token *AuthToken) GetLinkedToken(db *gorm.DB) (*AuthToken, error) {
 	linked_token := &AuthToken{}
 	err := db.First(&linked_token, auth_token.LinkedToken).Error
 	return linked_token, err
+}
+
+func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, token_type string) (*AuthToken, error) {
+	tokens, err := user.GetUserTokensByType(db, token_type)
+	if err != nil {
+		return &AuthToken{}, err
+	}
+	for _, token := range tokens {
+		if cryptutils.CompareHashAndString(token.Hashed_Token, raw_token) {
+			return token, nil
+		}
+	}
+	return &AuthToken{}, httputils.NewUnauthorizedError("Invalid token")
 }
 
 // ================ Update ================
