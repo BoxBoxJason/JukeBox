@@ -53,7 +53,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setAuthCookies(w, access_token, refresh_token)
-	httputils.SendSuccessResponse(w, "")
+	httputils.SendJSONResponse(w, map[string]string{"access_token": access_token, "refresh_token": refresh_token})
 }
 
 // Logout logs out a user by deleting the access token
@@ -92,7 +92,7 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setAuthCookies(w, access_token, new_refresh_token)
-	httputils.SendSuccessResponse(w, "")
+	httputils.SendJSONResponse(w, map[string]string{"access_token": access_token, "refresh_token": new_refresh_token})
 }
 
 func setAuthCookies(w http.ResponseWriter, access_token string, refresh_token string) {
