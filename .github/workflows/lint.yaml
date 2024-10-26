@@ -1,0 +1,44 @@
+name: go-lint
+on: [push, pull_request]
+jobs:
+  golanci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Golangci-lint
+        uses: golangci/golangci-lint-action@v6.0.1
+        with:
+          args: --enable-all --tests --out-format sarif ./... > golangci-lint.json
+        continue-on-error: true
+
+      - name: Upload golangci-lint report
+        uses: actions/upload-artifact@v4
+        with:
+          name: golangci-lint report
+          path: golangci-lint.json
+        continue-on-error: true
+
+  gosec:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Gosec security scanner
+        uses: securego/gosec@master
+        with:
+          args: -fail high -fmt sarif -out gosec.json ./...
+        continue-on-error: true
+
+      - name: Show gosec report
+        run: cat gosec.json
+        continue-on-error: true
+
+      - name: Upload gosec report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gosec-report
+          path: gosec.json
+        continue-on-error: true
