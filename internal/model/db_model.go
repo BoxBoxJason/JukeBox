@@ -1,6 +1,7 @@
 package db_model
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/boxboxjason/jukebox/internal/constants"
@@ -62,4 +63,26 @@ func CloseConnection(db *gorm.DB) error {
 	}
 
 	return sqlDB.Close()
+}
+
+// CheckDatabase checks if the database is accessible
+func CheckDatabase() error {
+	db, err := OpenConnection()
+	if err != nil {
+		return err
+	}
+	defer CloseConnection(db)
+
+	return db.Exec("SELECT 1").Error
+}
+
+func DatabaseVersion() string {
+	var version string
+	db, err := OpenConnection()
+	if err != nil {
+		return "error"
+	}
+	defer CloseConnection(db)
+	db.Raw("SELECT sqlite_version()").Scan(&version)
+	return fmt.Sprintf("SQLite %s", version)
 }

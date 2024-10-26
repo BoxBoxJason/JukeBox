@@ -9,6 +9,7 @@ import (
 type contextKey string
 
 var (
+	JUKEBOX_VERSION      = "latest-dev"
 	JUKEBOX_PATH         = path.Join(os.Getenv("HOME"), ".jukebox")
 	DB_DIR               = path.Join(JUKEBOX_PATH, "db")
 	DB_FILE              = path.Join(DB_DIR, "jukebox.db")
