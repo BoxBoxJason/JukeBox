@@ -2,6 +2,7 @@ name: go-test
 on: [push, pull_request]
 jobs:
   gotestsum:
+    if: github.ref != 'refs/heads/frontend' # Do not run on frontend branch
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,3 +25,31 @@ jobs:
         with:
           name: gotestsum-results
           path: gotestsum.xml
+
+
+  vitest:
+    if: github.ref != 'refs/heads/backend' # Do not run on backend branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Run tests
+        run: "npm run test:unit:ci"
+        working-directory: frontend
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-results
+          path: frontend/vitest-report.json
