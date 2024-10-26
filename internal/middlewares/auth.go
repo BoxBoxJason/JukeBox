@@ -53,7 +53,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 func getUserIDAndAccessToken(r *http.Request) (int, string, error) {
 	identity_bearer, err := readAccessCookie(r)
 	if err != nil {
-		identity_bearer, err = httputils.RetrieveAuthorizationToken(r, constants.AUTH_SCHEME+" ")
+		identity_bearer, err = httputils.RetrieveAuthorizationToken(r, constants.AUTH_SCHEME)
 		if err != nil {
 			return -1, "", err
 		}
