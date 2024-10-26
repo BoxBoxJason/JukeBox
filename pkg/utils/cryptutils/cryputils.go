@@ -2,7 +2,6 @@ package cryptutils
 
 import (
 	"crypto/rand"
-	"encoding/hex"
 
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
@@ -44,5 +43,5 @@ func GenerateHashedToken() (string, string, error) {
 		logger.Error("Unable to hash token", err)
 		return "", "", httputils.NewInternalServerError("Unable to hash token")
 	}
-	return hex.EncodeToString(token), hashed_token, nil
+	return string(token), hashed_token, nil
 }
