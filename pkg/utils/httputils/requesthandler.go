@@ -14,7 +14,7 @@ func RetrieveAuthorizationToken(r *http.Request, authorization_scheme string) (s
 	if !strings.HasPrefix(auth_header, authorization_scheme) {
 		return "", NewUnauthorizedError("Invalid authorization scheme")
 	}
-	return strings.TrimPrefix(auth_header, authorization_scheme), nil
+	return strings.TrimSpace(strings.TrimPrefix(auth_header, authorization_scheme)), nil
 }
 
 // RetrieveChiStringArgument retrieves a string argument from the URL parameters.
