@@ -6,7 +6,6 @@ import (
 
 	"github.com/boxboxjason/jukebox/internal/api"
 	"github.com/boxboxjason/jukebox/internal/constants"
-	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,9 +14,6 @@ import (
 func main() {
 	// Setup the logger
 	logger.SetupLogger(constants.LOG_DIR, "DEBUG")
-
-	// Initialize the database
-	db_model.CreateTables()
 
 	// Create new main router
 	main_router := chi.NewRouter()
