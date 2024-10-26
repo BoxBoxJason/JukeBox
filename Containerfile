@@ -9,11 +9,9 @@ COPY ./pkg/ /opt/jukebox/pkg/
 COPY ./go.mod /opt/jukebox/
 
 RUN apk add --no-cache npm go && \
-    npm --prefix /opt/jukebox/frontend install
-
-RUN npm --prefix /opt/jukebox/frontend run build
-
-RUN go mod tidy && \
+    npm --prefix /opt/jukebox/frontend install && \
+    npm --prefix /opt/jukebox/frontend run build && \
+    go mod tidy && \
     go build -o jukebox ./cmd/server && \
     chmod +x jukebox
 
@@ -24,6 +22,6 @@ WORKDIR /opt/jukebox
 COPY --from=build /opt/jukebox/jukebox /opt/jukebox/jukebox
 COPY --from=build /opt/jukebox/frontend/dist /opt/jukebox/frontend/dist
 
-CMD ["/opt/jukebox/jukebox"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD [ "curl", "-f", "localhost:3000/api/health" ]
 
-# HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD [ "curl", "-f", "http://localhost:3000/api/health" ]
+CMD ["/opt/jukebox/jukebox"]
