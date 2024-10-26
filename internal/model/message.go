@@ -7,9 +7,9 @@ type Message struct {
 	Sender     User   `gorm:"foreignKey:SenderID" json:"sender"`
 	SenderID   int    `gorm:"type:INTEGER;not null" json:"-"`
 	Content    string `gorm:"type:TEXT;not null" json:"content"`
-	Flagged    bool   `gorm:"type:BOOLEAN;not null;default:false" json:"flagged"`
-	Removed    bool   `gorm:"type:BOOLEAN;not null;default:false" json:"removed"`
-	Censored   bool   `gorm:"type:BOOLEAN;not null;default:false" json:"censored"`
+	Flagged    bool   `gorm:"type:BOOLEAN;default:false" json:"flagged"`
+	Removed    bool   `gorm:"type:BOOLEAN;default:false" json:"removed"`
+	Censored   bool   `gorm:"type:BOOLEAN;default:false" json:"censored"`
 	CreatedAt  int    `gorm:"autoCreateTime" json:"created_at"`
 	ModifiedAt int    `gorm:"autoUpdateTime:milli" json:"modified_at"`
 }
@@ -37,16 +37,16 @@ func GetMessageByID(db *gorm.DB, id int) (*Message, error) {
 	return message, err
 }
 
-// GetMessagesBySender retrieves all messages sent by a user from the database
+// GetMessages retrieves all messages sent by a user from the database
 // Does not retrieve the removed and censored messages
-func (user *User) GetMessagesBySender(db *gorm.DB) ([]*Message, error) {
+func (user *User) GetMessages(db *gorm.DB) ([]*Message, error) {
 	var messages []*Message
 	err := db.Preload("Sender").Where("sender_id = ? AND removed = ? AND censored = ?", user.ID, false, false).Find(&messages).Error
 	return messages, err
 }
 
-// GetAllMessagesBySender retrieves all messages sent by a user from the database, including the removed and censored messages
-func (user *User) GetAllMessagesBySender(db *gorm.DB) ([]*Message, error) {
+// GetAllMessages retrieves all messages sent by a user from the database, including the removed and censored messages
+func (user *User) GetAllMessages(db *gorm.DB) ([]*Message, error) {
 	var messages []*Message
 	err := db.Preload("Sender").Where("sender_id = ?", user.ID).Find(&messages).Error
 	return messages, err
