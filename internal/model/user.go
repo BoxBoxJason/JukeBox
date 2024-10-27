@@ -6,18 +6,20 @@ import (
 )
 
 type User struct {
-	ID                 int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Username           string `gorm:"type:TEXT;unique;not null" json:"username"`
-	Hashed_Password    string `gorm:"type:TEXT;not null" json:"-"`
-	Email              string `gorm:"type:TEXT;unique;not null" json:"-"`
-	Avatar             string `gorm:"type:TEXT;default:'default_avatar.png'" json:"avatar"`
-	Admin              bool   `gorm:"type:BOOLEAN;not null;default:false" json:"admin"`
-	Banned             bool   `gorm:"type:BOOLEAN;not null;default:false" json:"banned"`
-	TotalContributions int    `gorm:"type:INTEGER;not null;default:0" json:"total_contributions"`
-	MinutesListened    int    `gorm:"type:INTEGER;not null;default:0" json:"minutes_listened"`
-	Subscriber_Tier    int    `gorm:"type:INTEGER;not null;default:0" json:"subscriber_tier"`
-	CreatedAt          int    `gorm:"autoCreateTime" json:"created_at"`
-	ModifiedAt         int    `gorm:"autoUpdateTime:milli" json:"modified_at"`
+	ID                 int          `gorm:"primaryKey;autoIncrement" json:"id"`
+	Username           string       `gorm:"type:TEXT;unique;not null" json:"username"`
+	Hashed_Password    string       `gorm:"type:TEXT;not null" json:"-"`
+	Email              string       `gorm:"type:TEXT;unique;not null" json:"-"`
+	Avatar             string       `gorm:"type:TEXT;default:'default_avatar.png'" json:"avatar"`
+	Admin              bool         `gorm:"type:BOOLEAN;not null;default:false" json:"admin"`
+	Banned             bool         `gorm:"type:BOOLEAN;not null;default:false" json:"banned"`
+	TotalContributions int          `gorm:"type:INTEGER;not null;default:0" json:"total_contributions"`
+	MinutesListened    int          `gorm:"type:INTEGER;not null;default:0" json:"minutes_listened"`
+	Subscriber_Tier    int          `gorm:"type:INTEGER;not null;default:0" json:"subscriber_tier"`
+	Messages           []*Message   `gorm:"foreignKey:SenderID;constraint:OnDelete:CASCADE" json:"-"`
+	Tokens             []*AuthToken `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
+	CreatedAt          int          `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt         int          `gorm:"autoUpdateTime:milli" json:"modified_at"`
 }
 
 // ================ CRUD Operations ================
@@ -77,7 +79,7 @@ func GetAllUsers(db *gorm.DB) ([]*User, error) {
 	return users, err
 }
 
-func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, partial_usernames []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*User, error) {
+func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, emails []string, partial_usernames []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*User, error) {
 	users := []*User{}
 	query := db
 
@@ -92,6 +94,11 @@ func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, partial_usern
 	// Usernames
 	if len(usernames) > 0 {
 		orConditions = orConditions.Or("username IN ?", usernames)
+	}
+
+	// Emails
+	if len(emails) > 0 {
+		orConditions = orConditions.Or("email IN ?", emails)
 	}
 
 	// Partial usernames

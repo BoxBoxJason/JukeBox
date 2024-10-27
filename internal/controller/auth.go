@@ -48,7 +48,7 @@ func LoginFromToken(user_id int, token_string string) (string, error) {
 	defer db_model.CloseConnection(db)
 
 	// Retrieve the user
-	user, err := db_model.GetUserByID(db, user_id)
+	user, err := db_model.GetUserByID(db.Preload("AuthToken"), user_id)
 	if err != nil {
 		return "", httputils.NewUnauthorizedError("Invalid token")
 	}
@@ -105,11 +105,11 @@ func RefreshTokens(identity_bearer string) (string, string, error) {
 	var access_token_string string
 	access_token, err := refresh_token.GetLinkedToken(db)
 	if err != nil {
-		access_token, access_token_string, err = createUserToken(db, &refresh_token.User, constants.ACCESS_TOKEN)
+		access_token, access_token_string, err = createUserToken(db, refresh_token.User, constants.ACCESS_TOKEN)
 		if err != nil {
 			return "", "", err
 		}
-		refresh_token.LinkedToken = access_token.ID
+		refresh_token.LinkedToken = access_token
 	} else {
 		access_token_string, err = RefreshToken(db, access_token)
 		if err != nil {

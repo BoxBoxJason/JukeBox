@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type Message struct {
 	ID         int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Sender     User   `gorm:"foreignKey:SenderID" json:"sender"`
+	Sender     *User  `gorm:"foreignKey:SenderID" json:"sender"`
 	SenderID   int    `gorm:"type:INTEGER;not null" json:"-"`
 	Content    string `gorm:"type:TEXT;not null" json:"content"`
 	Flagged    bool   `gorm:"type:BOOLEAN;default:false" json:"flagged"`

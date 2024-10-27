@@ -30,7 +30,7 @@ func TestCreateAuthToken(t *testing.T) {
 	// Create a new auth token
 	auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_1",
-		User:         *user,
+		User:         user,
 	}
 
 	err = auth_token.CreateAuthToken(db)
@@ -63,11 +63,11 @@ func TestCreateAuthTokens(t *testing.T) {
 	auth_tokens := []*AuthToken{
 		{
 			Hashed_Token: "test_hashed_token_2",
-			User:         *user,
+			User:         user,
 		},
 		{
 			Hashed_Token: "test_hashed_token_3",
-			User:         *user,
+			User:         user,
 		},
 	}
 
@@ -100,7 +100,7 @@ func TestGetAuthTokenByID(t *testing.T) {
 	// Create an auth token
 	auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_4",
-		User:         *user,
+		User:         user,
 	}
 
 	err = auth_token.CreateAuthToken(db)
@@ -142,7 +142,7 @@ func TestGetUserTokensByType(t *testing.T) {
 	// Create access auth token
 	access_auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_5",
-		User:         *user,
+		User:         user,
 		Type:         constants.ACCESS_TOKEN,
 	}
 
@@ -154,7 +154,7 @@ func TestGetUserTokensByType(t *testing.T) {
 	// Create refresh auth token
 	refresh_auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_6",
-		User:         *user,
+		User:         user,
 		Type:         constants.REFRESH_TOKEN,
 	}
 
@@ -207,7 +207,7 @@ func TestGetLinkedToken(t *testing.T) {
 	// Create an access auth token
 	access_auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_7",
-		User:         *user,
+		User:         user,
 		Type:         constants.ACCESS_TOKEN,
 	}
 
@@ -219,9 +219,9 @@ func TestGetLinkedToken(t *testing.T) {
 	// Create a refresh auth token
 	refresh_auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_8",
-		User:         *user,
+		User:         user,
 		Type:         constants.REFRESH_TOKEN,
-		LinkedToken:  access_auth_token.ID,
+		LinkedToken:  access_auth_token,
 	}
 
 	err = refresh_auth_token.CreateAuthToken(db)
@@ -268,7 +268,7 @@ func TestCheckAuthTokenMatchesByType(t *testing.T) {
 	// Create an access auth token
 	access_auth_token := &AuthToken{
 		Hashed_Token: hashed_token,
-		User:         *user,
+		User:         user,
 		Type:         constants.ACCESS_TOKEN,
 	}
 
@@ -307,7 +307,7 @@ func TestUpdateAuthToken(t *testing.T) {
 	// Create an auth token
 	auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_9",
-		User:         *user,
+		User:         user,
 	}
 
 	err = auth_token.CreateAuthToken(db)
@@ -357,7 +357,7 @@ func TestDeleteAuthToken(t *testing.T) {
 	// Create an auth token
 	auth_token := &AuthToken{
 		Hashed_Token: "test_hashed_token_10",
-		User:         *user,
+		User:         user,
 	}
 
 	err = auth_token.CreateAuthToken(db)
@@ -402,11 +402,11 @@ func TestDeleteAuthTokens(t *testing.T) {
 	auth_tokens := []*AuthToken{
 		{
 			Hashed_Token: "test_hashed_token_11",
-			User:         *user,
+			User:         user,
 		},
 		{
 			Hashed_Token: "test_hashed_token_12",
-			User:         *user,
+			User:         user,
 		},
 	}
 

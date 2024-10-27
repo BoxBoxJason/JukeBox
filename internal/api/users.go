@@ -28,6 +28,7 @@ func SetUsersRoutes(r chi.Router) {
 		auth_router.Get(ID_PARAM_ENDPOINT, GetUser)
 		auth_router.Put(ID_PARAM_ENDPOINT, UpdateUser)
 		auth_router.Delete(ID_PARAM_ENDPOINT, DeleteUser)
+		auth_router.Delete("/", DeleteUsers)
 	})
 
 	r.Mount(USERS_PREFIX, users_subrouter)
@@ -94,12 +95,12 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}
-	admin, err := httputils.RetrieveBoolParameter(r, constants.ADMIN_PARAMETER, false)
+	admin, err := httputils.RetrieveBoolParameter(r, constants.ADMIN_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}
 
-	users, err := db_controller.GetUsers(ids, usernames, partial_username, banned, admin, minimum_subscriber_tier)
+	users, err := db_controller.GetUsers(ids, usernames, partial_username, nil, banned, admin, minimum_subscriber_tier)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -131,5 +132,66 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // ==================== Delete ====================
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	httputils.SendErrorToClient(w, httputils.NewNotImplementedError("route not implemented yet"))
+	// Retrieve the user from the context
+	user, ok := r.Context().Value(constants.USER_CONTEXT_KEY).(*db_model.User)
+	if !ok {
+		httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("user not found"))
+		return
+	}
+
+	user_to_delete_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	user_to_delete, err := db_controller.GetUser(user_to_delete_id)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	if !db_controller.UserHasPermissionToDeleteUser(user, user_to_delete) {
+		httputils.SendErrorToClient(w, httputils.NewForbiddenError("user does not have permission to delete user"))
+		return
+	}
+
+	err = db_controller.DeleteUser(nil, user_to_delete)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+	httputils.SendSuccessResponse(w, "user deleted")
+}
+
+func DeleteUsers(w http.ResponseWriter, r *http.Request) {
+	requester, ok := r.Context().Value(constants.USER_CONTEXT_KEY).(*db_model.User)
+	if !ok {
+		httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("user not found"))
+		return
+	}
+
+	usernames, err := httputils.RetrieveStringListValueParameter(r, constants.USERNAME_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAM, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	emails, err := httputils.RetrieveStringListValueParameter(r, constants.EMAIL_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	reason, err := httputils.RetrieveStringParameter(r, constants.REASON_PARAMETER, false)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+
+	err = db_controller.DeleteUsers(nil, requester, ids, usernames, emails, reason)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+	httputils.SendSuccessResponse(w, "users deleted")
 }
