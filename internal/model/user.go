@@ -77,34 +77,51 @@ func GetAllUsers(db *gorm.DB) ([]*User, error) {
 	return users, err
 }
 
-// IsAdmin checks if a user is an admin
-func (user *User) IsAdmin() bool {
-	return user.Admin
-}
+func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, partial_usernames []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*User, error) {
+	users := []*User{}
+	query := db
 
-// IsBanned checks if a user is banned
-func (user *User) IsBanned() bool {
-	return user.Banned
+	// Build the "OR" conditions for ids, usernames, and partial usernames
+	orConditions := db // Start an empty query for OR conditions
+
+	// IDs
+	if len(ids) > 0 {
+		orConditions = orConditions.Or("id IN ?", ids)
+	}
+
+	// Usernames
+	if len(usernames) > 0 {
+		orConditions = orConditions.Or("username IN ?", usernames)
+	}
+
+	// Partial usernames
+	if len(partial_usernames) > 0 {
+		for _, partial_username := range partial_usernames {
+			orConditions = orConditions.Or("username LIKE ?", "%"+partial_username+"%")
+		}
+	}
+
+	// Combine the OR conditions into the main query
+	query = query.Where(orConditions)
+
+	// Apply the remaining "AND" filters
+	if len(banned) == 1 {
+		query = query.Where("banned = ?", banned[0])
+	}
+	if len(admin) == 1 {
+		query = query.Where("admin = ?", admin[0])
+	}
+	if minimum_subscriber_tier > 0 {
+		query = query.Where("subscriber_tier >= ?", minimum_subscriber_tier)
+	}
+
+	err := query.Find(&users).Error
+	return users, err
 }
 
 // IsSubscriber checks if a user is a subscriber
 func (user *User) IsSubscriber() bool {
 	return user.Subscriber_Tier > 0
-}
-
-// GetMinutesListened retrieves the number of minutes a user has listened to music
-func (user *User) GetMinutesListened() int {
-	return user.MinutesListened
-}
-
-// GetSubscriberTier retrieves the subscriber tier of a user
-func (user *User) GetSubscriberTier() int {
-	return user.Subscriber_Tier
-}
-
-// GetTotalContributions retrieves the total number of contributions a user has made
-func (user *User) GetTotalContributions() int {
-	return user.TotalContributions
 }
 
 func (user *User) CheckPasswordMatches(password string) bool {

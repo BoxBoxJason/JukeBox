@@ -151,7 +151,7 @@ func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websoc
 	}
 
 	// Check if the user is the sender of the message OR an admin
-	if message_to_delete.Sender.ID != sender.ID && sender.IsAdmin() {
+	if message_to_delete.Sender.ID != sender.ID && sender.Admin {
 		logger.Error("User is not the sender of the message or an admin")
 		websocket_connection.WriteJSON(map[string]interface{}{
 			"status":  "error",

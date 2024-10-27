@@ -30,7 +30,7 @@ func RetrieveChiStringArgument(r *http.Request, argument_name string) (string, e
 func RetrieveChiIntArgument(r *http.Request, argument_name string) (int, error) {
 	argument := chi.URLParam(r, argument_name)
 	if argument == "" {
-		return -1, NewBadRequestError("Missing argument: " + argument_name)
+		return 0, NewBadRequestError("Missing argument: " + argument_name)
 	}
 	return strconv.Atoi(argument)
 }
@@ -44,8 +44,12 @@ func RetrieveStringParameter(r *http.Request, field_name string, missing_ok bool
 	}
 
 	values := r.Form[field_name]
-	if len(values) == 0 && !missing_ok {
-		return "", NewBadRequestError("Missing parameter: " + field_name)
+	if len(values) == 0 {
+		if !missing_ok {
+			return "", NewBadRequestError("Missing parameter: " + field_name)
+		} else {
+			return "", nil
+		}
 	}
 	if len(values) > 1 {
 		return "", NewBadRequestError("Multiple values found for parameter: " + field_name)
@@ -55,20 +59,48 @@ func RetrieveStringParameter(r *http.Request, field_name string, missing_ok bool
 
 // RetrieveIntParameter retrieves a single-value parameter from form data
 // and returns an error if there are multiple values for the same key.
-func RetrieveIntParameter(r *http.Request, parameter_name string, missing_ok bool) (string, error) {
+func RetrieveIntParameter(r *http.Request, parameter_name string, missing_ok bool) (int, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return "", NewBadRequestError("Failed to parse form data")
+		return 0, NewBadRequestError("Failed to parse form data")
 	}
 
 	values := r.Form[parameter_name]
-	if len(values) == 0 && !missing_ok {
-		return "", NewBadRequestError("Missing parameter: " + parameter_name)
+	if len(values) == 0 {
+		if !missing_ok {
+			return 0, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
+		return 0, nil
 	}
 	if len(values) > 1 {
-		return "", NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		return 0, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
-	return values[0], nil
+	return strconv.Atoi(values[0])
+}
+
+// RetrieveBoolParameter retrieves a boolean value for a given parameter name from form data.
+func RetrieveBoolParameter(r *http.Request, parameter_name string, missing_ok bool) ([]bool, error) {
+	err := r.ParseForm()
+	if err != nil {
+		return []bool{}, NewBadRequestError("Failed to parse form data")
+	}
+
+	values := r.Form[parameter_name]
+	if len(values) == 0 {
+		if !missing_ok {
+			return []bool{}, NewBadRequestError("Missing parameter: " + parameter_name)
+		} else {
+			return []bool{}, nil
+		}
+	}
+	if len(values) > 1 {
+		return []bool{}, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+	}
+	result, err := strconv.ParseBool(values[0])
+	if err != nil {
+		return []bool{}, NewBadRequestError("Invalid boolean value: " + values[0])
+	}
+	return []bool{result}, nil
 }
 
 // RetrieveStringListValueParameter retrieves a list of values for a given parameter name from form data.
@@ -108,15 +140,19 @@ func RetrieveIntListValueParameter(r *http.Request, parameter_name string, missi
 func RetrievePostFormIntParameter(r *http.Request, parameter_name string, missing_ok bool) (int, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return -1, NewBadRequestError("Failed to parse form data")
+		return 0, NewBadRequestError("Failed to parse form data")
 	}
 
 	values := r.PostForm[parameter_name]
-	if len(values) == 0 && !missing_ok {
-		return -1, NewBadRequestError("Missing parameter: " + parameter_name)
+	if len(values) == 0 {
+		if !missing_ok {
+			return 0, NewBadRequestError("Missing parameter: " + parameter_name)
+		} else {
+			return 0, nil
+		}
 	}
 	if len(values) > 1 {
-		return -1, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		return 0, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
 
 	return strconv.Atoi(values[0])
@@ -133,14 +169,36 @@ func RetrievePostFormStringParameter(r *http.Request, parameter_name string, mis
 	if len(values) == 0 {
 		if !missing_ok {
 			return "", NewBadRequestError("Missing parameter: " + parameter_name)
+		} else {
+			return "", nil
 		}
-		return "", nil
 	}
 	if len(values) > 1 {
 		return "", NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
 
 	return values[0], nil
+}
+
+// RetrievePostFormBoolParamater retrieves a boolean value for a given parameter name from form data.
+func RetrievePostFormBoolParameter(r *http.Request, parameter_name string, missing_ok bool) (bool, error) {
+	err := r.ParseForm()
+	if err != nil {
+		return false, NewBadRequestError("Failed to parse form data")
+	}
+
+	values := r.PostForm[parameter_name]
+	if len(values) == 0 {
+		if !missing_ok {
+			return false, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
+		return false, nil
+	}
+	if len(values) > 1 {
+		return false, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+	}
+
+	return strconv.ParseBool(values[0])
 }
 
 // RetrievePostFormStringListValueParameter retrieves a list of values for a given parameter name from form data.
