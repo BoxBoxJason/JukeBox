@@ -23,8 +23,8 @@ func CreateTables() {
 	}
 	defer CloseConnection(db)
 	logger.Info("Creating tables")
-	if !db.Migrator().HasTable(&User{}) || !db.Migrator().HasTable(&AuthToken{}) || !db.Migrator().HasTable(&Message{}) {
-		err = db.AutoMigrate(&User{}, &AuthToken{}, &Message{})
+	if !db.Migrator().HasTable(&User{}) || !db.Migrator().HasTable(&AuthToken{}) || !db.Migrator().HasTable(&Message{}) || !db.Migrator().HasTable(&Ban{}) {
+		err = db.AutoMigrate(&User{}, &AuthToken{}, &Message{}, &Ban{})
 		if err != nil {
 			logger.Fatal("Failed to create tables:", err)
 		} else {

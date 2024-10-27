@@ -57,17 +57,24 @@ const (
 	REFRESH_TOKEN_EXPIRATION = 7 * 24
 	// User context key (used to store/retrieve the user from the context)
 	USER_CONTEXT_KEY contextKey = "user"
+	// ==================== BAN ====================
+	// Ban Type constant
+	BAN_TYPE  = "ban"
+	MUTE_TYPE = "mute"
 	// ==================== REQUESTS PARAMETERS ====================
 	ID_PARAM                   = "id"
 	USERNAME_PARAMETER         = "username"
 	PARTIAL_USERNAME_PARAMETER = "partial_username"
 	EMAIL_PARAMETER            = "email"
 	PASSWORD_PARAMETER         = "password"
-	BANNED_PARAMETER           = "banned"
 	SUBSCRIBER_TIER            = "subscriber_tier"
 	ADMIN_PARAMETER            = "admin"
 	REASON_PARAMETER           = "reason"
 	AVATAR_PARAMETER           = "avatar"
+	TARGET_ID_PARAMETER        = "target_id"
+	DURATION_PARAMETER         = "duration"
+	ISSUER_ID_PARAMETER        = "issuer_id"
+	ENDS_AFTER                 = "ends_after"
 )
 
 func init() {

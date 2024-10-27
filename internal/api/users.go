@@ -31,6 +31,13 @@ func SetUsersRoutes(r chi.Router) {
 		auth_router.Delete(ID_PARAM_ENDPOINT, DeleteUser)
 		auth_router.Delete("/", DeleteUsers)
 		auth_router.Patch(ID_PARAM_ENDPOINT, UpdateUser)
+		auth_router.Get(ID_PARAM_ENDPOINT+"/ban", GetUserBans)
+	})
+
+	// Admin routes
+	users_subrouter.Group(func(admin_router chi.Router) {
+		admin_router.Use(middlewares.AdminAuthMiddleware)
+		admin_router.Post(ID_PARAM_ENDPOINT+"/ban", CreateUserBan)
 	})
 
 	r.Mount(USERS_PREFIX, users_subrouter)
@@ -75,6 +82,59 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	httputils.SendJSONResponse(w, db_user)
 }
 
+func CreateUserBan(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the user from the context
+	issuer, ok := r.Context().Value(constants.USER_CONTEXT_KEY).(*db_model.User)
+	if !ok {
+		httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("user not found"))
+		return
+	}
+
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	reason, err := httputils.RetrievePostFormStringParameter(r, constants.REASON_PARAMETER, false)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+	duration, err := httputils.RetrievePostFormIntParameter(r, constants.DURATION_PARAMETER, false)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	ban_type, err := httputils.RetrieveStringParameter(r, constants.BAN_TYPE, false)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	db, err := db_model.OpenConnection()
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+	defer db_model.CloseConnection(db)
+
+	user_to_ban, err := db_controller.GetUser(db, user_id)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	ban, err := db_controller.BanUser(db, issuer, user_to_ban, duration, reason, ban_type)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	httputils.SendJSONResponse(w, ban)
+}
+
 // ==================== Read ====================
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	usernames, err := httputils.RetrieveStringListValueParameter(r, constants.USERNAME_PARAMETER, true)
@@ -89,10 +149,6 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}
-	banned, err := httputils.RetrieveBoolParameter(r, constants.BANNED_PARAMETER, true)
-	if err != nil {
-		httputils.SendErrorToClient(w, err)
-	}
 	minimum_subscriber_tier, err := httputils.RetrieveIntParameter(r, constants.SUBSCRIBER_TIER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
@@ -102,7 +158,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		httputils.SendErrorToClient(w, err)
 	}
 
-	users, err := db_controller.GetUsers(nil, ids, usernames, partial_username, nil, banned, admin, minimum_subscriber_tier)
+	users, err := db_controller.GetUsers(nil, ids, usernames, partial_username, nil, admin, minimum_subscriber_tier)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -125,6 +181,40 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputils.SendJSONResponse(w, user)
+}
+
+func GetUserBans(w http.ResponseWriter, r *http.Request) {
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	ends_after, err := httputils.RetrieveIntParameter(r, constants.ENDS_AFTER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	ban_types, err := httputils.RetrieveStringListValueParameter(r, constants.BAN_TYPE, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	issuer_ids, err := httputils.RetrieveIntListValueParameter(r, constants.ISSUER_ID_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	bans, err := db_controller.GetBans(nil, nil, []int{user_id}, issuer_ids, ban_types, "", ends_after)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	httputils.SendJSONResponse(w, bans)
 }
 
 // ==================== Update ====================
@@ -165,16 +255,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Admin reserved fields
-	banned, err := httputils.RetrievePostFormBoolParameter(r, constants.BANNED_PARAMETER, true)
-	if err != nil {
-		httputils.SendErrorToClient(w, err)
-		return
-	} else if len(banned) > 0 && !user.Admin {
-		httputils.SendErrorToClient(w, httputils.NewForbiddenError("user does not have permission to ban user: "+strconv.Itoa(user_id)))
-		return
-	}
-
 	// Shared fields
 	username, err := httputils.RetrievePostFormStringParameter(r, constants.USERNAME_PARAMETER, true)
 	if err != nil {
@@ -201,7 +281,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_to_update, err = db_controller.UpdateUser(db, user_to_update, username, email, password, avatar_file, banned)
+	user_to_update, err = db_controller.UpdateUser(db, user_to_update, username, email, password, avatar_file)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
