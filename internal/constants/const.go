@@ -13,6 +13,10 @@ var (
 	JUKEBOX_VERSION = "latest-dev"
 	// Path to the Jukebox directory
 	JUKEBOX_PATH = path.Join(os.Getenv("HOME"), ".jukebox")
+	// Path to the Jukebox images directory
+	IMAGES_DIR = path.Join(JUKEBOX_PATH, "images")
+	// Path to the users avatars directory
+	AVATARS_DIR = path.Join(IMAGES_DIR, "avatars")
 	// Path to the Jukebox db directory
 	DB_DIR = path.Join(JUKEBOX_PATH, "db")
 	// Path to the Jukebox db file (if using sqlite)
@@ -63,12 +67,12 @@ const (
 	SUBSCRIBER_TIER            = "subscriber_tier"
 	ADMIN_PARAMETER            = "admin"
 	REASON_PARAMETER           = "reason"
+	AVATAR_PARAMETER           = "avatar"
 )
 
 func init() {
-	if _, err := os.Stat(JUKEBOX_PATH); os.IsNotExist(err) {
-		os.Mkdir(JUKEBOX_PATH, os.ModePerm)
-	} else if err != nil {
+	err := os.MkdirAll(JUKEBOX_PATH, os.ModePerm)
+	if err != nil {
 		fmt.Println("Failed to create Jukebox directory:", err)
 		os.Exit(1)
 	}

@@ -78,8 +78,10 @@ func SetupLogger(log_dir string, log_level string) {
 	}
 
 	// Check if the directory for the log directory exists
-	if _, err := os.Stat(LOG_DIR); os.IsNotExist(err) {
-		os.Mkdir(LOG_DIR, os.ModePerm)
+	err := os.MkdirAll(LOG_DIR, os.ModePerm)
+	if err != nil {
+		fmt.Println("Failed to create log directory:", err)
+		os.Exit(1)
 	}
 
 	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)

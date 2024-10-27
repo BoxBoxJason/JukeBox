@@ -1,36 +1,45 @@
 package db_controller
 
-import db_model "github.com/boxboxjason/jukebox/internal/model"
+import (
+	db_model "github.com/boxboxjason/jukebox/internal/model"
+	"gorm.io/gorm"
+)
 
 // ================= CRUD Operations =================
 
 // ================= Create =================
 
 // CreateMessage creates a new message in the database
-func CreateMessage(message string, user *db_model.User) (*db_model.Message, error) {
+func CreateMessage(db *gorm.DB, message string, user *db_model.User) (*db_model.Message, error) {
 	db_message := db_model.Message{
 		Sender:  user,
 		Content: message,
 	}
 
 	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return &db_message, err
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return &db_message, err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
-	err = db_message.CreateMessage(db)
+
+	err := db_message.CreateMessage(db)
 	return &db_message, err
 }
 
 // ================= Read =================
-func GetMessages() ([]*db_model.Message, error) {
+func GetMessages(db *gorm.DB) ([]*db_model.Message, error) {
 	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return nil, err
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return nil, err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
+
 	return db_model.GetAllVisibleMessages(db)
 }
 
@@ -47,13 +56,15 @@ func GetMessage(id int) (*db_model.Message, error) {
 // ================= Update =================
 
 // UpdateMessage updates a message in the database
-func UpdateMessage(id int, message string) (*db_model.Message, error) {
+func UpdateMessage(db *gorm.DB, id int, message string) (*db_model.Message, error) {
 	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return nil, err
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return nil, err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
 
 	// Retrieve the message
 	db_message, err := db_model.GetMessageByID(db, id)
@@ -70,13 +81,15 @@ func UpdateMessage(id int, message string) (*db_model.Message, error) {
 // ================= Delete =================
 
 // DeleteMessage deletes a message from the database
-func DeleteMessage(id int) error {
+func DeleteMessage(db *gorm.DB, id int) error {
 	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return err
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
 
 	// Retrieve the message
 	db_message, err := db_model.GetMessageByID(db, id)
@@ -88,13 +101,15 @@ func DeleteMessage(id int) error {
 	return db_message.DeleteMessage(db)
 }
 
-func DeleteMessages() error {
+func DeleteMessages(db *gorm.DB) error {
 	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return err
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
 
 	// Retrieve all messages
 	messages, err := db_model.GetAllMessages(db)
