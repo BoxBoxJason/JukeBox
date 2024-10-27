@@ -62,6 +62,7 @@ const (
 	BANNED_PARAMETER           = "banned"
 	SUBSCRIBER_TIER            = "subscriber_tier"
 	ADMIN_PARAMETER            = "admin"
+	REASON_PARAMETER           = "reason"
 )
 
 func init() {

@@ -25,7 +25,7 @@ func TestCreateMessage(t *testing.T) {
 	// Create a new message
 	message := &Message{
 		Content: "test_content_1",
-		Sender:  *user,
+		Sender:  user,
 	}
 
 	err = message.CreateMessage(db)
@@ -58,11 +58,11 @@ func TestCreateMessages(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_2",
-			Sender:  *user,
+			Sender:  user,
 		},
 		{
 			Content: "test_content_3",
-			Sender:  *user,
+			Sender:  user,
 		},
 	}
 
@@ -95,7 +95,7 @@ func TestGetMessageByID(t *testing.T) {
 	// Create a new message
 	message := &Message{
 		Content: "test_content_4",
-		Sender:  *user,
+		Sender:  user,
 	}
 
 	err = message.CreateMessage(db)
@@ -134,11 +134,11 @@ func TestGetMessagesBySender(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_5",
-			Sender:  *user,
+			Sender:  user,
 		},
 		{
 			Content: "test_content_6",
-			Sender:  *user,
+			Sender:  user,
 		},
 	}
 
@@ -181,12 +181,12 @@ func TestGetAllMessagesBySender(t *testing.T) {
 	messages := []*Message{
 		{
 			Content:  "test_content_7",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 		{
 			Content:  "test_content_8",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 	}
@@ -230,11 +230,11 @@ func TestGetMessagesByContent(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_9",
-			Sender:  *user,
+			Sender:  user,
 		},
 		{
 			Content: "test_content_10",
-			Sender:  *user,
+			Sender:  user,
 		},
 	}
 
@@ -277,12 +277,12 @@ func TestGetAllMessagesByContent(t *testing.T) {
 	messages := []*Message{
 		{
 			Content:  "test_content_11",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 		{
 			Content:  "test_content_12",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 	}
@@ -326,11 +326,11 @@ func TestGetAllVisibleMessages(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_13",
-			Sender:  *user,
+			Sender:  user,
 		},
 		{
 			Content: "test_content_14",
-			Sender:  *user,
+			Sender:  user,
 		},
 	}
 
@@ -373,11 +373,11 @@ func TestGetAllMessages(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_15",
-			Sender:  *user,
+			Sender:  user,
 		},
 		{
 			Content: "test_content_16",
-			Sender:  *user,
+			Sender:  user,
 		},
 	}
 
@@ -420,12 +420,12 @@ func TestGetFlaggedMessages(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_17",
-			Sender:  *user,
+			Sender:  user,
 			Flagged: true,
 		},
 		{
 			Content: "test_content_18",
-			Sender:  *user,
+			Sender:  user,
 			Flagged: true,
 		},
 	}
@@ -469,12 +469,12 @@ func TestGetFlaggedMessagesBySender(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_19",
-			Sender:  *user,
+			Sender:  user,
 			Flagged: true,
 		},
 		{
 			Content: "test_content_20",
-			Sender:  *user,
+			Sender:  user,
 			Flagged: true,
 		},
 	}
@@ -518,12 +518,12 @@ func TestGetRemovedMessages(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_21",
-			Sender:  *user,
+			Sender:  user,
 			Removed: true,
 		},
 		{
 			Content: "test_content_22",
-			Sender:  *user,
+			Sender:  user,
 			Removed: true,
 		},
 	}
@@ -567,12 +567,12 @@ func TestGetRemovedMessagesBySender(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_23",
-			Sender:  *user,
+			Sender:  user,
 			Removed: true,
 		},
 		{
 			Content: "test_content_24",
-			Sender:  *user,
+			Sender:  user,
 			Removed: true,
 		},
 	}
@@ -616,12 +616,12 @@ func TestGetCensoredMessages(t *testing.T) {
 	messages := []*Message{
 		{
 			Content:  "test_content_25",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 		{
 			Content:  "test_content_26",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 	}
@@ -664,12 +664,12 @@ func TestGetCensoredMessagesBySender(t *testing.T) {
 	messages := []*Message{
 		{
 			Content:  "test_content_27",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 		{
 			Content:  "test_content_28",
-			Sender:   *user,
+			Sender:   user,
 			Censored: true,
 		},
 	}
@@ -711,7 +711,7 @@ func TestUpdateMessage(t *testing.T) {
 	// Create a new message
 	message := &Message{
 		Content: "test_content_29",
-		Sender:  *user,
+		Sender:  user,
 	}
 
 	err = message.CreateMessage(db)
@@ -760,7 +760,7 @@ func TestDeleteMessage(t *testing.T) {
 	// Create a new message
 	message := &Message{
 		Content: "test_content_30",
-		Sender:  *user,
+		Sender:  user,
 	}
 
 	err = message.CreateMessage(db)
@@ -804,11 +804,11 @@ func TestDeleteMessages(t *testing.T) {
 	messages := []*Message{
 		{
 			Content: "test_content_31",
-			Sender:  *user,
+			Sender:  user,
 		},
 		{
 			Content: "test_content_32",
-			Sender:  *user,
+			Sender:  user,
 		},
 	}
 

@@ -1,21 +1,32 @@
 package db_model
 
 import (
+	"fmt"
+
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"gorm.io/gorm"
 )
 
 type AuthToken struct {
-	ID           int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	User         User   `gorm:"foreignKey:UserID" json:"user"`
-	UserID       int    `gorm:"type:INTEGER;not null" json:"-"`
-	Hashed_Token string `gorm:"type:TEXT;unique;not null" json:"hashed_token"`
-	Expiration   int64  `gorm:"type:INTEGER;not null" json:"expiration"`
-	Type         string `gorm:"type:TEXT;default:access" json:"type"`
-	LinkedToken  int    `gorm:"type:INTEGER;default:-1" json:"linked_token"`
-	CreatedAt    int    `gorm:"autoCreateTime" json:"created_at"`
-	ModifiedAt   int    `gorm:"autoUpdateTime:milli" json:"modified_at"`
+	ID            int        `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID        int        `gorm:"type:INTEGER;not null" json:"-"`
+	User          *User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"user"`
+	Hashed_Token  string     `gorm:"type:TEXT;unique;not null" json:"hashed_token"`
+	Expiration    int64      `gorm:"type:INTEGER;not null" json:"expiration"`
+	Type          string     `gorm:"type:TEXT;not null" json:"type"`
+	LinkedTokenID *int       `gorm:"type:INTEGER;default:null" json:"linked_token"`
+	LinkedToken   *AuthToken `gorm:"foreignKey:LinkedTokenID;constraint:OnDelete:SET NULL" json:"-"`
+	CreatedAt     int        `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt    int        `gorm:"autoUpdateTime:milli" json:"modified_at"`
+}
+
+func (token *AuthToken) BeforeSave(tx *gorm.DB) (err error) {
+	validTypes := map[string]bool{"access": true, "refresh": true}
+	if !validTypes[token.Type] {
+		return fmt.Errorf("invalid type; must be either 'access' or 'refresh'")
+	}
+	return nil
 }
 
 // ================ CRUD Operations ================
@@ -52,12 +63,8 @@ func (auth_token *AuthToken) GetLinkedToken(db *gorm.DB) (*AuthToken, error) {
 }
 
 func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, token_type string) (*AuthToken, error) {
-	tokens, err := user.GetUserTokensByType(db, token_type)
-	if err != nil {
-		return &AuthToken{}, err
-	}
-	for _, token := range tokens {
-		if cryptutils.CompareHashAndString(token.Hashed_Token, raw_token) {
+	for _, token := range user.Tokens {
+		if token.Type == token_type && cryptutils.CompareHashAndString(token.Hashed_Token, raw_token) {
 			return token, nil
 		}
 	}

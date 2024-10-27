@@ -94,7 +94,7 @@ func handleCreateMessage(message WebSocketMessage, sender *db_model.User, websoc
 
 	// Create the message
 	new_message := db_model.Message{
-		Sender:  *sender,
+		Sender:  sender,
 		Content: message.Content,
 	}
 
