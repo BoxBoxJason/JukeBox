@@ -1,4 +1,4 @@
-name: go-lint
+name: code-lint
 on: [push, pull_request]
 jobs:
   golanci-lint:

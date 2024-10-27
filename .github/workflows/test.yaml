@@ -1,4 +1,4 @@
-name: go-test
+name: code-test
 on: [push, pull_request]
 jobs:
   gotestsum:

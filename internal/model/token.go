@@ -3,6 +3,7 @@ package db_model
 import (
 	"fmt"
 
+	"github.com/boxboxjason/jukebox/internal/constants"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"gorm.io/gorm"
@@ -22,7 +23,10 @@ type AuthToken struct {
 }
 
 func (token *AuthToken) BeforeSave(tx *gorm.DB) (err error) {
-	validTypes := map[string]bool{"access": true, "refresh": true}
+	if len(token.Type) == 0 {
+		token.Type = constants.ACCESS_TOKEN
+	}
+	validTypes := map[string]bool{constants.ACCESS_TOKEN: true, constants.REFRESH_TOKEN: true}
 	if !validTypes[token.Type] {
 		return fmt.Errorf("invalid type; must be either 'access' or 'refresh'")
 	}
@@ -63,6 +67,14 @@ func (auth_token *AuthToken) GetLinkedToken(db *gorm.DB) (*AuthToken, error) {
 }
 
 func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, token_type string) (*AuthToken, error) {
+	if len(user.Tokens) == 0 {
+		var err error
+		user, err = GetUserByID(db.Preload("Tokens"), user.ID)
+		if err != nil {
+			return &AuthToken{}, err
+		}
+	}
+
 	for _, token := range user.Tokens {
 		if token.Type == token_type && cryptutils.CompareHashAndString(token.Hashed_Token, raw_token) {
 			return token, nil

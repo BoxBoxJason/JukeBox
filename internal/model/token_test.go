@@ -241,7 +241,6 @@ func TestGetLinkedToken(t *testing.T) {
 }
 
 func TestCheckAuthTokenMatchesByType(t *testing.T) {
-
 	db, err := OpenConnection()
 	if err != nil {
 		t.Errorf("Error opening connection to the database: %v", err)
@@ -278,7 +277,7 @@ func TestCheckAuthTokenMatchesByType(t *testing.T) {
 	}
 
 	// Check if the access token matches
-	_, err = user.CheckAuthTokenMatchesByType(db, raw_token, constants.ACCESS_TOKEN)
+	_, err = user.CheckAuthTokenMatchesByType(db.Preload("Tokens"), raw_token, constants.ACCESS_TOKEN)
 	if err != nil {
 		t.Errorf("Error checking if access token matches: %v", err)
 	}
