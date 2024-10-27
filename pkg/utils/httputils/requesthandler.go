@@ -1,6 +1,7 @@
 package httputils
 
 import (
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -181,24 +182,28 @@ func RetrievePostFormStringParameter(r *http.Request, parameter_name string, mis
 }
 
 // RetrievePostFormBoolParamater retrieves a boolean value for a given parameter name from form data.
-func RetrievePostFormBoolParameter(r *http.Request, parameter_name string, missing_ok bool) (bool, error) {
+func RetrievePostFormBoolParameter(r *http.Request, parameter_name string, missing_ok bool) ([]bool, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return false, NewBadRequestError("Failed to parse form data")
+		return []bool{}, NewBadRequestError("Failed to parse form data")
 	}
 
 	values := r.PostForm[parameter_name]
 	if len(values) == 0 {
 		if !missing_ok {
-			return false, NewBadRequestError("Missing parameter: " + parameter_name)
+			return []bool{}, NewBadRequestError("Missing parameter: " + parameter_name)
 		}
-		return false, nil
+		return []bool{}, nil
 	}
 	if len(values) > 1 {
-		return false, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		return []bool{}, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
 
-	return strconv.ParseBool(values[0])
+	result, err := strconv.ParseBool(values[0])
+	if err != nil {
+		return []bool{}, NewBadRequestError("Invalid boolean value: " + values[0])
+	}
+	return []bool{result}, nil
 }
 
 // RetrievePostFormStringListValueParameter retrieves a list of values for a given parameter name from form data.
@@ -240,4 +245,61 @@ func ReadCookie(r *http.Request, cookie_name string) (string, error) {
 		return "", NewUnauthorizedError("Missing cookie: " + cookie_name)
 	}
 	return cookie.Value, nil
+}
+
+// RetrieveImageFile retrieves an uploaded image file from a multipart form.
+// It returns the file and its header or an error if the file is missing or not accessible.
+func RetrieveImageFile(r *http.Request, fieldName string, missingOk bool) (multipart.File, *multipart.FileHeader, error) {
+	// Ensure the request size is under 3MB
+	err := r.ParseMultipartForm(3 << 20)
+	if err != nil {
+		return nil, nil, NewBadRequestError("Request size exceeds the limit")
+	}
+	// Retrieve the file from the specified field name
+	file, file_header, err := r.FormFile(fieldName)
+	if err != nil {
+		if err == http.ErrMissingFile && missingOk {
+			// If missing_ok is true, return nil without raising an error
+			return nil, nil, nil
+		}
+		return nil, nil, NewBadRequestError("Missing or inaccessible file: " + fieldName)
+	}
+
+	// Check if the uploaded file is an image
+	err = ValidateImageFile(file, file_header)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return file, file_header, nil
+}
+
+// ValidateImageFile checks if the uploaded file is an image by verifying the MIME type.
+// It returns an error if the file is not an image.
+func ValidateImageFile(file multipart.File, file_header *multipart.FileHeader) error {
+	// Check if fileHeader's content type starts with "image/"
+	if !strings.HasPrefix(file_header.Header.Get("Content-Type"), "image/") {
+		return NewBadRequestError("Uploaded file is not an image")
+	}
+
+	// Reset the file pointer to the beginning of the file
+	file.Seek(0, 0)
+
+	// Read the first 512 bytes to verify image file type
+	buf := make([]byte, 512)
+	_, err := file.Read(buf)
+	if err != nil {
+		return NewBadRequestError("Failed to read the file")
+	}
+
+	// Reset the file pointer to the beginning of the file
+	file.Seek(0, 0)
+
+	// Check if the content type of the file is indeed an image type by inspecting the buffer
+	contentType := http.DetectContentType(buf)
+	if !strings.HasPrefix(contentType, "image/") {
+		return NewBadRequestError("Uploaded file does not appear to be a valid image")
+	}
+
+	return nil
 }

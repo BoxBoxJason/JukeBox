@@ -35,15 +35,10 @@ func CreateTables() {
 
 // OpenConnection opens a connection to the SQLite database
 func OpenConnection() (*gorm.DB, error) {
-	if _, err := os.Stat(constants.DB_DIR); os.IsNotExist(err) {
-		err = os.Mkdir(constants.DB_DIR, 0700)
-		if err != nil {
-			logger.Critical("Failed to create the database directory", err)
-			return nil, httputils.NewDatabaseError("Failed to create the database directory")
-		}
-	} else if err != nil {
-		logger.Critical("Failed to check if the database file exists:", err)
-		return nil, httputils.NewDatabaseError("Failed to check if the database file exists")
+	err := os.MkdirAll(constants.DB_DIR, os.ModePerm)
+	if err != nil {
+		logger.Critical("Failed to create the database directory", err)
+		return nil, httputils.NewDatabaseError("Failed to create the database directory")
 	}
 
 	db, err := gorm.Open(sqlite.Open(constants.DB_FILE), &gorm.Config{})

@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/boxboxjason/jukebox/internal/constants"
 	db_controller "github.com/boxboxjason/jukebox/internal/controller"
@@ -29,6 +30,7 @@ func SetUsersRoutes(r chi.Router) {
 		auth_router.Put(ID_PARAM_ENDPOINT, UpdateUser)
 		auth_router.Delete(ID_PARAM_ENDPOINT, DeleteUser)
 		auth_router.Delete("/", DeleteUsers)
+		auth_router.Patch(ID_PARAM_ENDPOINT, UpdateUser)
 	})
 
 	r.Mount(USERS_PREFIX, users_subrouter)
@@ -63,7 +65,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the user
-	db_user, err := db_controller.CreateUser(username, email, password)
+	db_user, err := db_controller.CreateUser(nil, username, email, password)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -100,7 +102,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		httputils.SendErrorToClient(w, err)
 	}
 
-	users, err := db_controller.GetUsers(ids, usernames, partial_username, nil, banned, admin, minimum_subscriber_tier)
+	users, err := db_controller.GetUsers(nil, ids, usernames, partial_username, nil, banned, admin, minimum_subscriber_tier)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -116,7 +118,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := db_controller.GetUser(user_id)
+	user, err := db_controller.GetUser(nil, user_id)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -127,7 +129,85 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 // ==================== Update ====================
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	httputils.SendErrorToClient(w, httputils.NewNotImplementedError("route not implemented yet"))
+	// Retrieve the user from the context
+	user, ok := r.Context().Value(constants.USER_CONTEXT_KEY).(*db_model.User)
+	if !ok {
+		httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("user not found"))
+		return
+	}
+
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	if user.ID != user_id && !user.Admin {
+		httputils.SendErrorToClient(w, httputils.NewForbiddenError("user does not have permission to update user"))
+		return
+	}
+
+	// User reserved fields
+	email, err := httputils.RetrievePostFormStringParameter(r, constants.EMAIL_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	} else if len(email) > 0 && user.ID != user_id {
+		httputils.SendErrorToClient(w, httputils.NewForbiddenError("user does not have permission to update email for user: "+strconv.Itoa(user_id)))
+		return
+	}
+	password, err := httputils.RetrievePostFormStringParameter(r, constants.PASSWORD_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	} else if len(password) > 0 && user.ID != user_id {
+		httputils.SendErrorToClient(w, httputils.NewForbiddenError("user does not have permission to update password for user: "+strconv.Itoa(user_id)))
+		return
+	}
+
+	// Admin reserved fields
+	banned, err := httputils.RetrievePostFormBoolParameter(r, constants.BANNED_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	} else if len(banned) > 0 && !user.Admin {
+		httputils.SendErrorToClient(w, httputils.NewForbiddenError("user does not have permission to ban user: "+strconv.Itoa(user_id)))
+		return
+	}
+
+	// Shared fields
+	username, err := httputils.RetrievePostFormStringParameter(r, constants.USERNAME_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	db, err := db_model.OpenConnection()
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+	defer db_model.CloseConnection(db)
+
+	user_to_update, err := db_controller.GetUser(db, user_id)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	avatar_file, _, err := httputils.RetrieveImageFile(r, constants.AVATAR_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	user_to_update, err = db_controller.UpdateUser(db, user_to_update, username, email, password, avatar_file, banned)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	httputils.SendJSONResponse(w, user_to_update)
 }
 
 // ==================== Delete ====================
@@ -145,7 +225,14 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_to_delete, err := db_controller.GetUser(user_to_delete_id)
+	db, err := db_model.OpenConnection()
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+	defer db_model.CloseConnection(db)
+
+	user_to_delete, err := db_controller.GetUser(db, user_to_delete_id)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -156,7 +243,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db_controller.DeleteUser(nil, user_to_delete)
+	err = db_controller.DeleteUser(db, user_to_delete)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return

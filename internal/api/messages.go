@@ -55,7 +55,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the message
-	message, err := db_controller.CreateMessage(message_content, user)
+	message, err := db_controller.CreateMessage(nil, message_content, user)
 	if err != nil {
 		logger.Error("Failed to create message", err)
 		httputils.SendErrorToClient(w, httputils.NewInternalServerError("Failed to create message"))

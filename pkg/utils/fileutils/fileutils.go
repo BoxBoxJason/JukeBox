@@ -3,8 +3,11 @@ package fileutils
 import (
 	"archive/zip"
 	"io"
+	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 )
 
 // CompressFiles compresses a list of files into a single archive file at the specified path.
@@ -60,4 +63,32 @@ func AddFileToZip(zip_writer *zip.Writer, file_path string) error {
 
 func DeleteFile(file_path string) error {
 	return os.Remove(file_path)
+}
+
+// SaveImageFile saves an uploaded image file to the specified directory with the given filename.
+// It returns the full path to the saved file or an error if the save fails.
+func SaveImageFile(file multipart.File, destination_dir string, filename string) error {
+	// Ensure the destination directory exists
+	err := os.MkdirAll(destination_dir, os.ModePerm)
+	if err != nil {
+		return httputils.NewInternalServerError("Failed to create directory: " + destination_dir)
+	}
+
+	// Define the full path for the new file
+	dest_path := filepath.Join(destination_dir, filename)
+
+	// Create a new file in the destination directory
+	dest_file, err := os.Create(dest_path)
+	if err != nil {
+		return httputils.NewInternalServerError("Failed to create file: " + dest_path)
+	}
+	defer dest_file.Close()
+
+	// Copy the uploaded file's contents to the new file
+	_, err = io.Copy(dest_file, file)
+	if err != nil {
+		return httputils.NewInternalServerError("Failed to save file to filesystem")
+	}
+
+	return nil
 }
