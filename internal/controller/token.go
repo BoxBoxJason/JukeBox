@@ -20,7 +20,8 @@ import (
 func GenerateUserAuthTokens(db *gorm.DB, user *db_model.User) (string, string, error) {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return "", "", err
 		}
@@ -62,7 +63,8 @@ func GenerateUserAuthTokens(db *gorm.DB, user *db_model.User) (string, string, e
 func createUserToken(db *gorm.DB, user *db_model.User, token_type string) (*db_model.AuthToken, string, error) {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return &db_model.AuthToken{}, "", err
 		}
@@ -107,7 +109,8 @@ func calculateExpirationTime(token_type string) int64 {
 func RefreshToken(db *gorm.DB, token *db_model.AuthToken) (string, error) {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return "", err
 		}
@@ -138,7 +141,8 @@ func RefreshToken(db *gorm.DB, token *db_model.AuthToken) (string, error) {
 func DeleteToken(db *gorm.DB, token *db_model.AuthToken) error {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return err
 		}

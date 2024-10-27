@@ -1,6 +1,8 @@
 package db_controller
 
 import (
+	"sync"
+
 	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"gorm.io/gorm"
 )
@@ -18,14 +20,28 @@ func CreateMessage(db *gorm.DB, message string, user *db_model.User) (*db_model.
 
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return &db_message, err
 		}
 		defer db_model.CloseConnection(db)
 	}
 
-	err := db_message.CreateMessage(db)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Create the message and increase the user's contributions count
+	var err error
+	go func() {
+		defer wg.Done()
+		err = db_message.CreateMessage(db)
+	}()
+	go func() {
+		defer wg.Done()
+		user.IncreaseContributionsCount(db)
+	}()
+
 	return &db_message, err
 }
 
@@ -33,7 +49,8 @@ func CreateMessage(db *gorm.DB, message string, user *db_model.User) (*db_model.
 func GetMessages(db *gorm.DB) ([]*db_model.Message, error) {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +76,8 @@ func GetMessage(id int) (*db_model.Message, error) {
 func UpdateMessage(db *gorm.DB, id int, message string) (*db_model.Message, error) {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +102,8 @@ func UpdateMessage(db *gorm.DB, id int, message string) (*db_model.Message, erro
 func DeleteMessage(db *gorm.DB, id int) error {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return err
 		}
@@ -104,7 +123,8 @@ func DeleteMessage(db *gorm.DB, id int) error {
 func DeleteMessages(db *gorm.DB) error {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return err
 		}

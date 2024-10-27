@@ -61,7 +61,7 @@ func CreateUser(db *gorm.DB, username string, email string, password string) (*d
 
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return &db_model.User{}, err
 		}
@@ -92,9 +92,10 @@ func CreateUser(db *gorm.DB, username string, email string, password string) (*d
 
 // GetUser retrieves a user from the database by ID
 func GetUser(db *gorm.DB, id int) (*db_model.User, error) {
+	// Open db connection
 	if db == nil {
-		// Open db connection
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return nil, err
 		}
@@ -111,9 +112,10 @@ func GetUser(db *gorm.DB, id int) (*db_model.User, error) {
 
 // GetUserByPartialUsername retrieves a user from the database by partial username
 func GetUsersByPartialUsername(db *gorm.DB, partial_username string) ([]*db_model.User, error) {
+	// Open db connection
 	if db == nil {
-		// Open db connection
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return nil, err
 		}
@@ -124,11 +126,9 @@ func GetUsersByPartialUsername(db *gorm.DB, partial_username string) ([]*db_mode
 }
 
 // GetUsers retrieves all users from the database, applies filters if provided
-func GetUsers(db *gorm.DB, ids []int, usernames []string, partial_usernames []string, emails []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*db_model.User, error) {
+func GetUsers(db *gorm.DB, ids []int, usernames []string, partial_usernames []string, emails []string, admin []bool, minimum_subscriber_tier int) ([]*db_model.User, error) {
 	// Sanity checks
-	if len(banned) > 1 {
-		return nil, httputils.NewBadRequestError("Only one value is allowed for the banned parameter")
-	} else if len(admin) > 1 {
+	if len(admin) > 1 {
 		return nil, httputils.NewBadRequestError("Only one value is allowed for the admin parameter")
 	} else if minimum_subscriber_tier < 0 || minimum_subscriber_tier > 3 {
 		return nil, httputils.NewBadRequestError("Invalid subscriber tier, must be between 0 and 3")
@@ -140,18 +140,19 @@ func GetUsers(db *gorm.DB, ids []int, usernames []string, partial_usernames []st
 	}
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return nil, err
 		}
 		defer db_model.CloseConnection(db)
 	}
 
-	return db_model.GetUsersByFilters(db, ids, usernames, emails, partial_usernames, banned, admin, minimum_subscriber_tier)
+	return db_model.GetUsersByFilters(db, ids, usernames, emails, partial_usernames, admin, minimum_subscriber_tier)
 }
 
 // ================= Update =================
-func UpdateUser(db *gorm.DB, user *db_model.User, username string, email string, password string, avatar_file multipart.File, banned []bool) (*db_model.User, error) {
+func UpdateUser(db *gorm.DB, user *db_model.User, username string, email string, password string, avatar_file multipart.File) (*db_model.User, error) {
 	// Validate user input
 	valid_username := VALID_USERNAME.MatchString(username)
 	valid_email := VALID_EMAIL.MatchString(email)
@@ -189,7 +190,8 @@ func UpdateUser(db *gorm.DB, user *db_model.User, username string, email string,
 
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return &db_model.User{}, err
 		}
@@ -220,9 +222,6 @@ func UpdateUser(db *gorm.DB, user *db_model.User, username string, email string,
 	if len(avatar) > 0 {
 		user.Avatar = avatar
 	}
-	if len(banned) > 0 {
-		user.Banned = banned[0]
-	}
 	if len(hashed_password) > 0 {
 		user.Hashed_Password = hashed_password
 	}
@@ -243,7 +242,8 @@ func UserHasPermissionToDeleteUser(user *db_model.User, user_to_delete *db_model
 
 func DeleteUser(db *gorm.DB, user *db_model.User) error {
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return err
 		}
@@ -255,7 +255,8 @@ func DeleteUser(db *gorm.DB, user *db_model.User) error {
 func DeleteUsers(db *gorm.DB, requester *db_model.User, ids []int, usernames []string, emails []string, reason string) error {
 	// Open db connection
 	if db == nil {
-		db, err := db_model.OpenConnection()
+		var err error
+		db, err = db_model.OpenConnection()
 		if err != nil {
 			return err
 		}
@@ -263,7 +264,7 @@ func DeleteUsers(db *gorm.DB, requester *db_model.User, ids []int, usernames []s
 	}
 
 	// Retrieve users
-	users, err := db_model.GetUsersByFilters(db, ids, usernames, emails, nil, nil, nil, 0)
+	users, err := db_model.GetUsersByFilters(db, ids, usernames, emails, nil, nil, 0)
 	if err != nil {
 		return err
 	}

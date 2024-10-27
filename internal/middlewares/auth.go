@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/boxboxjason/jukebox/internal/constants"
 	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
+	"github.com/boxboxjason/jukebox/pkg/utils/timeutils"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -30,12 +32,23 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		defer db_model.CloseConnection(db)
 
 		// Check if the user exists and the access token is valid
-		user, err := db_model.GetUserByID(db, user_id)
+		user, err := db_model.GetUserByID(db.Preload("Tokens").Preload("Bans"), user_id)
 		if err != nil {
 			httputils.SendErrorToClient(w, err)
 			return
 		}
 
+		// Check if the user is under a current ban
+		bans, err := user.GetActiveBans(db)
+		if err != nil {
+			httputils.SendErrorToClient(w, err)
+			return
+		} else if len(bans) > 0 {
+			httputils.SendErrorToClient(w, httputils.NewForbiddenError(fmt.Sprintf("User is banned until %s for reason: %s", timeutils.ConvertUnixTimestampToDatetimeString(bans[0].EndsAt), bans[0].Reason)))
+			return
+		}
+
+		// Check if the access token matches the one stored in the database
 		db_access_token, err := user.CheckAuthTokenMatchesByType(db, access_token, constants.ACCESS_TOKEN)
 		if err == nil {
 			// Attach the user to the request context
@@ -43,6 +56,60 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			// Attach the access token to the request context
 			ctx = context.WithValue(ctx, constants.ACCESS_TOKEN_CONTEXT_KEY, db_access_token)
 			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("Invalid access token"))
+			return
+		}
+	})
+}
+
+func AdminAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Retrieve the user ID and access token from the request
+		user_id, access_token, err := getUserIDAndAccessToken(r)
+		if err != nil {
+			httputils.SendErrorToClient(w, err)
+			return
+		}
+
+		// Open a connection to the database
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			httputils.SendErrorToClient(w, err)
+			return
+		}
+		defer db_model.CloseConnection(db)
+
+		// Check if the user exists and the access token is valid
+		user, err := db_model.GetUserByID(db.Preload("Tokens").Preload("Bans"), user_id)
+		if err != nil {
+			httputils.SendErrorToClient(w, err)
+			return
+		}
+
+		// Check if the user is under a current ban
+		bans, err := user.GetActiveBans(db)
+		if err != nil {
+			httputils.SendErrorToClient(w, err)
+			return
+		} else if len(bans) > 0 {
+			httputils.SendErrorToClient(w, httputils.NewForbiddenError(fmt.Sprintf("User is banned until %s for reason: %s", timeutils.ConvertUnixTimestampToDatetimeString(bans[0].EndsAt), bans[0].Reason)))
+			return
+		}
+
+		// Check if the access token matches the one stored in the database
+		db_access_token, err := user.CheckAuthTokenMatchesByType(db, access_token, constants.ACCESS_TOKEN)
+		if err == nil {
+			if user.Admin {
+				// Attach the user to the request context
+				ctx := context.WithValue(r.Context(), constants.USER_CONTEXT_KEY, user)
+				// Attach the access token to the request context
+				ctx = context.WithValue(ctx, constants.ACCESS_TOKEN_CONTEXT_KEY, db_access_token)
+				next.ServeHTTP(w, r.WithContext(ctx))
+			} else {
+				httputils.SendErrorToClient(w, httputils.NewForbiddenError("User not authorized"))
+				return
+			}
 		} else {
 			httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("Invalid access token"))
 			return
