@@ -13,7 +13,7 @@ import (
 var (
 	VALID_USERNAME = regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
 	VALID_EMAIL    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	VALID_PASSWORD = regexp.MustCompile(`^.{6,}$`)
+	VALID_PASSWORD = regexp.MustCompile(`^.{6,32}$`)
 )
 
 // ================= CRUD Operations =================
@@ -112,8 +112,21 @@ func GetUsersByPartialUsername(partial_username string) ([]*db_model.User, error
 	return db_model.GetUsersByUsername(db, partial_username)
 }
 
-// GetAllUsers retrieves all users from the database
-func GetAllUsers() ([]*db_model.User, error) {
+// GetUsers retrieves all users from the database, applies filters if provided
+func GetUsers(ids []int, usernames []string, partial_usernames []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*db_model.User, error) {
+	// Sanity checks
+	if len(banned) > 1 {
+		return nil, httputils.NewBadRequestError("Only one value is allowed for the banned parameter")
+	} else if len(admin) > 1 {
+		return nil, httputils.NewBadRequestError("Only one value is allowed for the admin parameter")
+	} else if minimum_subscriber_tier < 0 || minimum_subscriber_tier > 3 {
+		return nil, httputils.NewBadRequestError("Invalid subscriber tier, must be between 0 and 3")
+	}
+	for _, id := range ids {
+		if id < 0 {
+			return nil, httputils.NewBadRequestError("Invalid user ID, must be a positive integer")
+		}
+	}
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
@@ -121,7 +134,7 @@ func GetAllUsers() ([]*db_model.User, error) {
 	}
 	defer db_model.CloseConnection(db)
 
-	return db_model.GetAllUsers(db)
+	return db_model.GetUsersByFilters(db, ids, usernames, partial_usernames, banned, admin, minimum_subscriber_tier)
 }
 
 // ================= Update =================

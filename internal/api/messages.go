@@ -75,7 +75,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 // GetMessage retrieves a message by its ID
 func GetMessage(w http.ResponseWriter, r *http.Request) {
-	message_id, err := httputils.RetrieveChiIntArgument(r, ID_PARAM)
+	message_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -108,7 +108,7 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 
 // DeleteMessage deletes a message by its ID
 func DeleteMessage(w http.ResponseWriter, r *http.Request) {
-	message_id, err := httputils.RetrieveChiIntArgument(r, ID_PARAM)
+	message_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
