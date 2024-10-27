@@ -6,6 +6,7 @@ import (
 
 	"github.com/boxboxjason/jukebox/internal/api"
 	"github.com/boxboxjason/jukebox/internal/constants"
+	"github.com/boxboxjason/jukebox/internal/jobs"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -27,11 +28,16 @@ func main() {
 	// Serve the frontend
 	frontend_fs := http.FileServer(http.Dir(path.Join(".", "frontend", "dist")))
 	main_router.Handle("/*", frontend_fs)
-	logger.Debug("Serving frontend from ", path.Join(".", "frontend", "dist"))
+	logger.Info("Serving frontend at \"/\" from", path.Join(".", "frontend", "dist"))
 
 	// Serve the API
 	api_router := api.ApiRouter()
 	main_router.Mount("/api", api_router)
+	logger.Info("Serving API at /api")
+
+	// Start jobs
+	jobs.SetupJobs()
+	logger.Info("Jobs started")
 
 	// Start the server (attempt to use TLS first)
 	logger.Info("Starting JukeBox server at https://localhost:3000")

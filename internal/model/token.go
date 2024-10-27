@@ -2,6 +2,7 @@ package db_model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/boxboxjason/jukebox/internal/constants"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
@@ -60,12 +61,14 @@ func (user *User) GetUserTokensByType(db *gorm.DB, token_type string) ([]*AuthTo
 	return tokens, err
 }
 
+// GetLinkedToken retrieves the linked token for an auth token
 func (auth_token *AuthToken) GetLinkedToken(db *gorm.DB) (*AuthToken, error) {
 	linked_token := &AuthToken{}
 	err := db.First(&linked_token, auth_token.LinkedToken).Error
 	return linked_token, err
 }
 
+// CheckAuthTokenMatchesByType checks if an auth token matches a raw token for a user by type
 func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, token_type string) (*AuthToken, error) {
 	if len(user.Tokens) == 0 {
 		var err error
@@ -81,6 +84,12 @@ func (user *User) CheckAuthTokenMatchesByType(db *gorm.DB, raw_token string, tok
 		}
 	}
 	return &AuthToken{}, httputils.NewUnauthorizedError("Invalid token")
+}
+
+func GetExpiredTokens(db *gorm.DB) ([]*AuthToken, error) {
+	var tokens []*AuthToken
+	err := db.Where("expiration < ?", time.Now().Unix()).Find(&tokens).Error
+	return tokens, err
 }
 
 // ================ Update ================
@@ -105,7 +114,7 @@ func (user *User) DeleteUserTokens(db *gorm.DB) error {
 	return db.Where("user_id = ?", user.ID).Delete(AuthToken{}).Error
 }
 
-// DeleteAllTokens deletes all auth tokens from the database
-func DeleteAllTokens(db *gorm.DB) error {
-	return db.Delete(AuthToken{}).Error
+// DeleteExpiredTokens deletes all expired tokens from the database
+func DeleteExpiredTokens(db *gorm.DB) error {
+	return db.Where("expiration < ?", time.Now().Unix()).Delete(AuthToken{}).Error
 }

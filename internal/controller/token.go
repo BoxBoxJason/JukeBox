@@ -166,3 +166,17 @@ func DeleteToken(db *gorm.DB, token *db_model.AuthToken) error {
 
 	return nil
 }
+
+// DeleteExpiredTokens deletes all expired tokens from the database
+func DeleteExpiredTokens(db *gorm.DB) error {
+	if db == nil {
+		var err error
+		db, err = db_model.OpenConnection()
+		if err != nil {
+			return err
+		}
+		defer db_model.CloseConnection(db)
+	}
+
+	return db_model.DeleteExpiredTokens(db)
+}
