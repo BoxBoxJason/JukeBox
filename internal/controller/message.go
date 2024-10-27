@@ -107,5 +107,5 @@ func DeleteMessages() error {
 }
 
 func UserHasPermissionToDeleteMessage(user *db_model.User, message *db_model.Message) bool {
-	return message.Sender.ID == user.ID || user.IsAdmin()
+	return message.Sender.ID == user.ID || user.Admin
 }

@@ -45,17 +45,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Retrieve the user input
-	username, err := httputils.RetrievePostFormStringParameter(r, "username", false)
+	username, err := httputils.RetrievePostFormStringParameter(r, constants.USERNAME_PARAMETER, false)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
-	email, err := httputils.RetrievePostFormStringParameter(r, "email", false)
+	email, err := httputils.RetrievePostFormStringParameter(r, constants.EMAIL_PARAMETER, false)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
-	password, err := httputils.RetrievePostFormStringParameter(r, "password", false)
+	password, err := httputils.RetrievePostFormStringParameter(r, constants.PASSWORD_PARAMETER, false)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -74,11 +74,42 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // ==================== Read ====================
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	httputils.SendErrorToClient(w, httputils.NewNotImplementedError("route not implemented yet"))
+	usernames, err := httputils.RetrieveStringListValueParameter(r, constants.USERNAME_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	partial_username, err := httputils.RetrieveStringListValueParameter(r, constants.PARTIAL_USERNAME_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAM, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	banned, err := httputils.RetrieveBoolParameter(r, constants.BANNED_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	minimum_subscriber_tier, err := httputils.RetrieveIntParameter(r, constants.SUBSCRIBER_TIER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+	admin, err := httputils.RetrieveBoolParameter(r, constants.ADMIN_PARAMETER, false)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+
+	users, err := db_controller.GetUsers(ids, usernames, partial_username, banned, admin, minimum_subscriber_tier)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	httputils.SendJSONResponse(w, users)
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	user_id, err := httputils.RetrieveChiIntArgument(r, ID_PARAM)
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
