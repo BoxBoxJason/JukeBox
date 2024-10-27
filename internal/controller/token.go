@@ -40,7 +40,7 @@ func GenerateUserAuthTokens(db *gorm.DB, user *db_model.User) (string, string, e
 	}
 
 	// Link the refresh token to the access token
-	refresh_token.LinkedToken = access_token.ID
+	refresh_token.LinkedToken = access_token
 	err = refresh_token.UpdateAuthToken(db)
 	if err != nil {
 		logger.Error("Unable to link the refresh token to the access token for user", user.Username)
@@ -48,7 +48,7 @@ func GenerateUserAuthTokens(db *gorm.DB, user *db_model.User) (string, string, e
 	}
 
 	// Link the access token to the refresh token
-	access_token.LinkedToken = refresh_token.ID
+	access_token.LinkedToken = refresh_token
 	err = access_token.UpdateAuthToken(db)
 	if err != nil {
 		logger.Error("Unable to link the access token to the refresh token for user", user.Username)
@@ -78,7 +78,7 @@ func createUserToken(db *gorm.DB, user *db_model.User, token_type string) (*db_m
 	}
 
 	token := db_model.AuthToken{
-		User:         *user,
+		User:         user,
 		Hashed_Token: hashed_string_token,
 		Type:         token_type,
 		Expiration:   calculateExpirationTime(token_type),

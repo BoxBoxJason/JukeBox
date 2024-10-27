@@ -9,7 +9,7 @@ import db_model "github.com/boxboxjason/jukebox/internal/model"
 // CreateMessage creates a new message in the database
 func CreateMessage(message string, user *db_model.User) (*db_model.Message, error) {
 	db_message := db_model.Message{
-		Sender:  *user,
+		Sender:  user,
 		Content: message,
 	}
 
