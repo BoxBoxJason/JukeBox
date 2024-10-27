@@ -125,6 +125,34 @@ func (user *User) GetCensoredMessages(db *gorm.DB) ([]*Message, error) {
 	return messages, err
 }
 
+func GetMessages(db *gorm.DB, ids []int, sender_ids []int, flagged []bool, censored []bool, removed []bool, contains []string) ([]*Message, error) {
+	query := db
+	for _, s := range contains {
+		query = query.Or("content LIKE ?", "%"+s+"%")
+	}
+
+	if len(sender_ids) > 0 {
+		query = query.Where("sender_id IN ?", sender_ids)
+	}
+	if len(flagged) > 0 {
+		query = query.Where("flagged = ?", flagged[0])
+	}
+	if len(censored) > 0 {
+		query = query.Where("censored = ?", censored[0])
+	}
+	if len(removed) > 0 {
+		query = query.Where("removed = ?", removed[0])
+	}
+
+	if len(ids) > 0 {
+		query = query.Or("id IN ?", ids)
+	}
+
+	var messages []*Message
+	err := query.Find(&messages).Error
+	return messages, err
+}
+
 // ================ Update ================
 
 // UpdateMessage updates a message in the database

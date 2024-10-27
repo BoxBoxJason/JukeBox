@@ -31,7 +31,8 @@ func SetUsersRoutes(r chi.Router) {
 		auth_router.Delete(ID_PARAM_ENDPOINT, DeleteUser)
 		auth_router.Delete("/", DeleteUsers)
 		auth_router.Patch(ID_PARAM_ENDPOINT, UpdateUser)
-		auth_router.Get(ID_PARAM_ENDPOINT+"/ban", GetUserBans)
+		auth_router.Get(ID_PARAM_ENDPOINT+BANS_PREFIX, GetUserBans)
+		auth_router.Get(ID_PARAM_ENDPOINT+MESSAGES_PREFIX, GetUserMessages)
 	})
 
 	// Admin routes
@@ -90,7 +91,7 @@ func CreateUserBan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -145,11 +146,11 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}
-	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAM, true)
+	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}
-	minimum_subscriber_tier, err := httputils.RetrieveIntParameter(r, constants.SUBSCRIBER_TIER, true)
+	minimum_subscriber_tier, err := httputils.RetrieveIntParameter(r, constants.SUBSCRIBER_TIER_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}
@@ -168,7 +169,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -184,13 +185,13 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUserBans(w http.ResponseWriter, r *http.Request) {
-	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
-	ends_after, err := httputils.RetrieveIntParameter(r, constants.ENDS_AFTER, true)
+	ends_after, err := httputils.RetrieveIntParameter(r, constants.ENDS_AFTER_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -217,6 +218,48 @@ func GetUserBans(w http.ResponseWriter, r *http.Request) {
 	httputils.SendJSONResponse(w, bans)
 }
 
+func GetUserMessages(w http.ResponseWriter, r *http.Request) {
+	id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	flagged, err := httputils.RetrieveBoolParameter(r, constants.FLAGGED_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	censored, err := httputils.RetrieveBoolParameter(r, constants.CENSORED_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	removed, err := httputils.RetrieveBoolParameter(r, constants.REMOVED_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	contains, err := httputils.RetrieveStringListValueParameter(r, constants.CONTAINS_PARAMETER, true)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	// Retrieve the messages
+	messages, err := db_controller.GetMessages(nil, nil, []int{id}, flagged, censored, removed, contains)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+		return
+	}
+
+	// Send the messages to the client
+	httputils.SendJSONResponse(w, messages)
+}
+
 // ==================== Update ====================
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the user from the context
@@ -226,7 +269,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	user_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -299,7 +342,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_to_delete_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	user_to_delete_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -342,7 +385,7 @@ func DeleteUsers(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}
-	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAM, true)
+	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 	}

@@ -15,7 +15,7 @@ const (
 	BANS_PREFIX = "/bans"
 )
 
-func SetBansRoutes(r chi.Router) {
+func SetupBansRoutes(r chi.Router) {
 	bans_subrouter := chi.NewRouter()
 
 	// Authenticated routes
@@ -89,7 +89,7 @@ func PostBan(w http.ResponseWriter, r *http.Request) {
 
 // ==================== Read ====================
 func GetBan(w http.ResponseWriter, r *http.Request) {
-	ban_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	ban_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -104,7 +104,7 @@ func GetBan(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBans(w http.ResponseWriter, r *http.Request) {
-	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAM, true)
+	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -134,7 +134,7 @@ func GetBans(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ends_after, err := httputils.RetrieveIntParameter(r, constants.ENDS_AFTER, false)
+	ends_after, err := httputils.RetrieveIntParameter(r, constants.ENDS_AFTER_PARAMETER, false)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -150,7 +150,7 @@ func GetBans(w http.ResponseWriter, r *http.Request) {
 
 // ==================== Update ====================
 func PatchBan(w http.ResponseWriter, r *http.Request) {
-	ban_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	ban_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -191,7 +191,7 @@ func PatchBan(w http.ResponseWriter, r *http.Request) {
 
 // ==================== Delete ====================
 func DeleteBan(w http.ResponseWriter, r *http.Request) {
-	ban_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAM)
+	ban_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -219,7 +219,7 @@ func DeleteBan(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteBans(w http.ResponseWriter, r *http.Request) {
-	ban_ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAM, true)
+	ban_ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
