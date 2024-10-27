@@ -24,12 +24,12 @@ func RetrieveChiStringArgument(r *http.Request, argument_name string) (string, e
 	if argument == "" {
 		return "", NewBadRequestError("Missing argument: " + argument_name)
 	}
-	return argument, nil
+	return strings.TrimSpace(argument), nil
 }
 
 // RetrieveChiIntArgument retrieves an integer argument from the URL parameters.
 func RetrieveChiIntArgument(r *http.Request, argument_name string) (int, error) {
-	argument := chi.URLParam(r, argument_name)
+	argument := strings.TrimSpace(chi.URLParam(r, argument_name))
 	if argument == "" {
 		return 0, NewBadRequestError("Missing argument: " + argument_name)
 	}
@@ -55,7 +55,7 @@ func RetrieveStringParameter(r *http.Request, field_name string, missing_ok bool
 	if len(values) > 1 {
 		return "", NewBadRequestError("Multiple values found for parameter: " + field_name)
 	}
-	return values[0], nil
+	return strings.TrimSpace(values[0]), nil
 }
 
 // RetrieveIntParameter retrieves a single-value parameter from form data
@@ -76,7 +76,7 @@ func RetrieveIntParameter(r *http.Request, parameter_name string, missing_ok boo
 	if len(values) > 1 {
 		return 0, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
-	return strconv.Atoi(values[0])
+	return strconv.Atoi(strings.TrimSpace(values[0]))
 }
 
 // RetrieveBoolParameter retrieves a boolean value for a given parameter name from form data.
@@ -97,7 +97,7 @@ func RetrieveBoolParameter(r *http.Request, parameter_name string, missing_ok bo
 	if len(values) > 1 {
 		return []bool{}, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
-	result, err := strconv.ParseBool(values[0])
+	result, err := strconv.ParseBool(strings.TrimSpace(values[0]))
 	if err != nil {
 		return []bool{}, NewBadRequestError("Invalid boolean value: " + values[0])
 	}
@@ -112,6 +112,9 @@ func RetrieveStringListValueParameter(r *http.Request, parameter_name string, mi
 	values := r.Form[parameter_name]
 	if len(values) == 0 && !missing_ok {
 		return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+	}
+	for i, value := range values {
+		values[i] = strings.TrimSpace(value)
 	}
 	return values, nil
 }
@@ -128,7 +131,7 @@ func RetrieveIntListValueParameter(r *http.Request, parameter_name string, missi
 
 	int_values := make([]int, 0, len(values))
 	for _, value := range values {
-		int_value, err := strconv.Atoi(value)
+		int_value, err := strconv.Atoi(strings.TrimSpace(value))
 		if err != nil {
 			return nil, NewBadRequestError("Invalid integer value: " + value)
 		}
@@ -156,7 +159,7 @@ func RetrievePostFormIntParameter(r *http.Request, parameter_name string, missin
 		return 0, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
 
-	return strconv.Atoi(values[0])
+	return strconv.Atoi(strings.TrimSpace(values[0]))
 }
 
 // RetrievePostFormStringParameter retrieves a single-value parameter from form data
@@ -178,7 +181,7 @@ func RetrievePostFormStringParameter(r *http.Request, parameter_name string, mis
 		return "", NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
 
-	return values[0], nil
+	return strings.TrimSpace(values[0]), nil
 }
 
 // RetrievePostFormBoolParamater retrieves a boolean value for a given parameter name from form data.
@@ -199,7 +202,7 @@ func RetrievePostFormBoolParameter(r *http.Request, parameter_name string, missi
 		return []bool{}, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
 	}
 
-	result, err := strconv.ParseBool(values[0])
+	result, err := strconv.ParseBool(strings.TrimSpace(values[0]))
 	if err != nil {
 		return []bool{}, NewBadRequestError("Invalid boolean value: " + values[0])
 	}
@@ -215,6 +218,9 @@ func RetrievePostFormStringListValueParameter(r *http.Request, parameter_name st
 	if len(values) == 0 && !missing_ok {
 		return nil, NewBadRequestError("Missing parameter: " + parameter_name)
 	}
+	for i, value := range values {
+		values[i] = strings.TrimSpace(value)
+	}
 	return values, nil
 }
 
@@ -228,13 +234,13 @@ func RetrievePostFormIntListValueParameter(r *http.Request, parameter_name strin
 		return nil, NewBadRequestError("Missing parameter: " + parameter_name)
 	}
 
-	int_values := make([]int, 0, len(values))
-	for _, value := range values {
-		int_value, err := strconv.Atoi(value)
+	int_values := make([]int, len(values))
+	for i, value := range values {
+		int_value, err := strconv.Atoi(strings.TrimSpace(value))
 		if err != nil {
 			return nil, NewBadRequestError("Invalid integer value: " + value)
 		}
-		int_values = append(int_values, int_value)
+		int_values[i] = int_value
 	}
 	return int_values, nil
 }

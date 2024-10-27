@@ -658,7 +658,7 @@ paths:
         - messages
         - get
       parameters:
-        - name: sender
+        - name: sender_id
           in: query
           description: ID of the sender of the message
           required: false
@@ -735,7 +735,7 @@ paths:
               properties:
                 sender:
                   type: integer
-                content:
+                message:
                   type: string
       responses:
         '201':
@@ -912,7 +912,7 @@ paths:
             schema:
               type: object
               properties:
-                content:
+                message:
                   type: string
                 flagged:
                   type: boolean
