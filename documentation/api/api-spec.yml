@@ -320,20 +320,20 @@ paths:
               properties:
                 username:
                   type: string
+                  description: New username
                 email:
                   type: string
+                  description: New email
                 password:
                   type: string
+                  description: New password
                 avatar:
                   type: string
-                admin:
-                  type: boolean
+                  format: binary
+                  description: New avatar
                 banned:
                   type: boolean
-                total_contributions:
-                  type: integer
-                subscriber_tier:
-                  type: integer
+                  description: Ban or unban the user
       responses:
         '200':
           description: OK

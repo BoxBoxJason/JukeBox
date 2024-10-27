@@ -3,8 +3,6 @@ package httputils
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/boxboxjason/jukebox/pkg/logger"
 )
 
 func SendJSONResponse(w http.ResponseWriter, response interface{}) {
@@ -12,7 +10,6 @@ func SendJSONResponse(w http.ResponseWriter, response interface{}) {
 	w.WriteHeader(http.StatusOK)
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {
-		logger.Error("Failed to encode response", err)
 		SendErrorToClient(w, NewInternalServerError("Failed to encode response"))
 	}
 }

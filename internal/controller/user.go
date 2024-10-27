@@ -1,12 +1,16 @@
 package db_controller
 
 import (
+	"mime/multipart"
 	"regexp"
+	"strconv"
 	"strings"
 
+	"github.com/boxboxjason/jukebox/internal/constants"
 	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
+	"github.com/boxboxjason/jukebox/pkg/utils/fileutils"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"gorm.io/gorm"
 )
@@ -23,7 +27,7 @@ var (
 
 // CreateUser creates a new user in the database after checking the validity of the input fields
 // And the uniqueness of the username and email
-func CreateUser(username string, email string, password string) (*db_model.User, error) {
+func CreateUser(db *gorm.DB, username string, email string, password string) (*db_model.User, error) {
 	// Validate user input
 	valid_username := VALID_USERNAME.MatchString(username)
 	valid_email := VALID_EMAIL.MatchString(email)
@@ -56,11 +60,13 @@ func CreateUser(username string, email string, password string) (*db_model.User,
 	}
 
 	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return &db_model.User{}, err
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return &db_model.User{}, err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
 
 	// Check if user already exists
 	_, err = db_model.GetUserByUsername(db, username)
@@ -85,13 +91,15 @@ func CreateUser(username string, email string, password string) (*db_model.User,
 // ================= Read =================
 
 // GetUser retrieves a user from the database by ID
-func GetUser(id int) (*db_model.User, error) {
-	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return nil, err
+func GetUser(db *gorm.DB, id int) (*db_model.User, error) {
+	if db == nil {
+		// Open db connection
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return nil, err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
 
 	user, err := db_model.GetUserByID(db, id)
 	if err != nil {
@@ -102,19 +110,21 @@ func GetUser(id int) (*db_model.User, error) {
 }
 
 // GetUserByPartialUsername retrieves a user from the database by partial username
-func GetUsersByPartialUsername(partial_username string) ([]*db_model.User, error) {
-	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return nil, err
+func GetUsersByPartialUsername(db *gorm.DB, partial_username string) ([]*db_model.User, error) {
+	if db == nil {
+		// Open db connection
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return nil, err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
 
 	return db_model.GetUsersByUsername(db, partial_username)
 }
 
 // GetUsers retrieves all users from the database, applies filters if provided
-func GetUsers(ids []int, usernames []string, partial_usernames []string, emails []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*db_model.User, error) {
+func GetUsers(db *gorm.DB, ids []int, usernames []string, partial_usernames []string, emails []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*db_model.User, error) {
 	// Sanity checks
 	if len(banned) > 1 {
 		return nil, httputils.NewBadRequestError("Only one value is allowed for the banned parameter")
@@ -129,16 +139,102 @@ func GetUsers(ids []int, usernames []string, partial_usernames []string, emails 
 		}
 	}
 	// Open db connection
-	db, err := db_model.OpenConnection()
-	if err != nil {
-		return nil, err
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return nil, err
+		}
+		defer db_model.CloseConnection(db)
 	}
-	defer db_model.CloseConnection(db)
 
 	return db_model.GetUsersByFilters(db, ids, usernames, emails, partial_usernames, banned, admin, minimum_subscriber_tier)
 }
 
 // ================= Update =================
+func UpdateUser(db *gorm.DB, user *db_model.User, username string, email string, password string, avatar_file multipart.File, banned []bool) (*db_model.User, error) {
+	// Validate user input
+	valid_username := VALID_USERNAME.MatchString(username)
+	valid_email := VALID_EMAIL.MatchString(email)
+	valid_password := VALID_PASSWORD.MatchString(password)
+
+	invalid_fields := make([]string, 0)
+	if len(username) > 0 && !valid_username {
+		invalid_fields = append(invalid_fields, "username")
+	}
+	if len(email) > 0 && !valid_email {
+		invalid_fields = append(invalid_fields, "email")
+	}
+	if len(password) > 0 && !valid_password {
+		invalid_fields = append(invalid_fields, "password")
+	}
+	if len(invalid_fields) > 0 {
+		return &db_model.User{}, httputils.NewBadRequestError("Invalid fields: " + strings.Join(invalid_fields, ", "))
+	}
+	avatar := ""
+	if avatar_file != nil {
+		err := UploadUserAvatar(avatar_file, user.ID)
+		if err != nil {
+			return &db_model.User{}, err
+		}
+	}
+	hashed_password := ""
+	if len(password) > 0 {
+		new_hashed_password, err := cryptutils.HashString(password)
+		if err != nil {
+			logger.Error("Unable to hash the password during user update", err)
+			return &db_model.User{}, httputils.NewInternalServerError("Unable to hash the password")
+		}
+		hashed_password = new_hashed_password
+	}
+
+	// Open db connection
+	if db == nil {
+		db, err := db_model.OpenConnection()
+		if err != nil {
+			return &db_model.User{}, err
+		}
+		defer db_model.CloseConnection(db)
+	}
+
+	// Check if user already exists
+	if username != user.Username {
+		_, err := db_model.GetUserByUsername(db, username)
+		if err == nil {
+			return &db_model.User{}, httputils.NewConflictError("Username already exists")
+		}
+	}
+	if email != user.Email {
+		_, err := db_model.GetUserByEmail(db, email)
+		if err == nil {
+			return &db_model.User{}, httputils.NewConflictError("Email already exists")
+		}
+	}
+
+	// Update user
+	if len(username) > 0 {
+		user.Username = username
+	}
+	if len(email) > 0 {
+		user.Email = email
+	}
+	if len(avatar) > 0 {
+		user.Avatar = avatar
+	}
+	if len(banned) > 0 {
+		user.Banned = banned[0]
+	}
+	if len(hashed_password) > 0 {
+		user.Hashed_Password = hashed_password
+	}
+
+	err := user.UpdateUser(db)
+	if err != nil {
+		logger.Error("Unable to update the user in the database")
+	} else {
+		logger.Info("User", user.Username, "updated successfully")
+	}
+	return user, err
+}
 
 // ================= Delete =================
 func UserHasPermissionToDeleteUser(user *db_model.User, user_to_delete *db_model.User) bool {
@@ -187,4 +283,9 @@ func DeleteUsers(db *gorm.DB, requester *db_model.User, ids []int, usernames []s
 
 	// Delete users
 	return db_model.DeleteUsers(db, users)
+}
+
+// UploadUserAvatar uploads a user avatar to the server
+func UploadUserAvatar(avatar multipart.File, user_id int) error {
+	return fileutils.SaveImageFile(avatar, constants.AVATARS_DIR, strconv.Itoa(user_id))
 }
