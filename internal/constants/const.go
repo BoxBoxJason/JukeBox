@@ -62,19 +62,25 @@ const (
 	BAN_TYPE  = "ban"
 	MUTE_TYPE = "mute"
 	// ==================== REQUESTS PARAMETERS ====================
-	ID_PARAM                   = "id"
+	ID_PARAMETER               = "id"
 	USERNAME_PARAMETER         = "username"
 	PARTIAL_USERNAME_PARAMETER = "partial_username"
 	EMAIL_PARAMETER            = "email"
 	PASSWORD_PARAMETER         = "password"
-	SUBSCRIBER_TIER            = "subscriber_tier"
+	SUBSCRIBER_TIER_PARAMETER  = "subscriber_tier"
 	ADMIN_PARAMETER            = "admin"
 	REASON_PARAMETER           = "reason"
 	AVATAR_PARAMETER           = "avatar"
 	TARGET_ID_PARAMETER        = "target_id"
 	DURATION_PARAMETER         = "duration"
 	ISSUER_ID_PARAMETER        = "issuer_id"
-	ENDS_AFTER                 = "ends_after"
+	ENDS_AFTER_PARAMETER       = "ends_after"
+	SENDER_ID_PARAMETER        = "sender_id"
+	FLAGGED_PARAMETER          = "flagged"
+	CENSORED_PARAMETER         = "censored"
+	REMOVED_PARAMETER          = "removed"
+	CONTAINS_PARAMETER         = "contains"
+	MESSAGE_PARAMETER          = "message"
 )
 
 func init() {
