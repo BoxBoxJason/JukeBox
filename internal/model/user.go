@@ -16,8 +16,9 @@ type User struct {
 	TotalContributions int          `gorm:"type:INTEGER;not null;default:0" json:"total_contributions"`
 	MinutesListened    int          `gorm:"type:INTEGER;not null;default:0" json:"minutes_listened"`
 	Subscriber_Tier    int          `gorm:"type:INTEGER;not null;default:0" json:"subscriber_tier"`
-	Messages           []*Message   `gorm:"foreignKey:SenderID;constraint:OnDelete:CASCADE" json:"-"`
-	Tokens             []*AuthToken `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
+	Messages           []*Message   `gorm:"foreignKey:SenderID" json:"-"`
+	Tokens             []*AuthToken `gorm:"foreignKey:UserID" json:"-"`
+	Bans               []*Ban       `gorm:"foreignKey:TargetID" json:"-"`
 	CreatedAt          int          `gorm:"autoCreateTime" json:"created_at"`
 	ModifiedAt         int          `gorm:"autoUpdateTime:milli" json:"modified_at"`
 }
@@ -79,7 +80,7 @@ func GetAllUsers(db *gorm.DB) ([]*User, error) {
 	return users, err
 }
 
-func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, emails []string, partial_usernames []string, banned []bool, admin []bool, minimum_subscriber_tier int) ([]*User, error) {
+func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, emails []string, partial_usernames []string, admin []bool, minimum_subscriber_tier int) ([]*User, error) {
 	users := []*User{}
 	query := db
 
@@ -112,9 +113,6 @@ func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, emails []stri
 	query = query.Where(orConditions)
 
 	// Apply the remaining "AND" filters
-	if len(banned) == 1 {
-		query = query.Where("banned = ?", banned[0])
-	}
 	if len(admin) == 1 {
 		query = query.Where("admin = ?", admin[0])
 	}
@@ -139,6 +137,11 @@ func (user *User) CheckPasswordMatches(password string) bool {
 
 // UpdateUser updates a user in the database
 func (user *User) UpdateUser(db *gorm.DB) error {
+	return db.Save(user).Error
+}
+
+func (user *User) IncreaseContributionsCount(db *gorm.DB) error {
+	user.TotalContributions++
 	return db.Save(user).Error
 }
 

@@ -208,12 +208,6 @@ paths:
             type: array
             items:
               type: integer
-        - name: banned
-          in: query
-          description: Filter users by banned status
-          required: false
-          schema:
-            type: boolean
         - subscriber_tier:
           in: query
           description: Filter users by subscriber tier
@@ -331,9 +325,6 @@ paths:
                   type: string
                   format: binary
                   description: New avatar
-                banned:
-                  type: boolean
-                  description: Ban or unban the user
       responses:
         '200':
           description: OK
@@ -434,11 +425,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /api/users/{id}/ban:
-    patch:
-      summary: Ban or unban a user by ID
+    post:
+      summary: Ban a user by ID
       description: |
-        Ban or unban a user by ID. Using the endpoint will also censor all messages from the user. Admin only.
-        If the ban parameter is not provided, the user ban status will be toggled.
+        Ban a user by ID. Can be a mute or a ban.
+        Mute will prevent the user from sending messages.
+        Ban will prevent the user from logging in.
       tags:
         - users
         - ban
@@ -458,22 +450,108 @@ paths:
           required: true
           schema:
             type: string
-        - name: ban
+        - name: duration
           in: query
-          description: Ban or unban the user
+          description: Duration of the ban in seconds
           required: false
           schema:
-            type: boolean
+            type: integer
+        - name: type
+          in: query
+          description: Type of ban (mute or ban)
+          required: true
+          schema:
+            type: string
+            enum:
+              - mute
+              - ban
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Ban'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get bans from a user by ID
+      description: Get bans from a user by ID.
+      tags:
+        - users
+        - ban
+      security:
+        - HttpAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of a user to get bans from
+          required: true
+          schema:
+            type: integer
+        - name: ends_after
+          in: query
+          description: Filter bans by end date
+          required: false
+          schema:
+            type: integer
+        - name: type
+          in: query
+          description: Filter bans by type
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum:
+              - mute
+              - ban
+        - name: issuer_id
+          in: query
+          description: Filter bans by issuer ID
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ban'
         '400':
           description: Bad Request
           content:
@@ -935,6 +1013,396 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/bans:
+    post:
+      summary: Create new ban(s)
+      description: Create new ban(s)
+      tags:
+        - bans
+        - create
+      security:
+        - HttpAuth: []
+        - CookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_id:
+                  type: array
+                  items:
+                    type: integer
+                  description: ID of the target of the ban
+                type:
+                  type: string
+                  enum:
+                    - mute
+                    - ban
+                reason:
+                  type: string
+                  description: Reason for the ban
+                duration:
+                  type: integer
+                  description: Duration of the ban in hours
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ban'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get bans depending on filters
+      description: Get bans depending on filters.
+      tags:
+        - bans
+        - get
+      security:
+        - HttpAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: ID of a ban to get
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: target_id
+          in: query
+          description: ID of the target of the ban
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: type
+          in: query
+          description: Filter bans by type
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum:
+              - mute
+              - ban
+        - name: issuer_id
+          in: query
+          description: Filter bans by issuer ID
+          required: false
+          schema:
+            type: integer
+        - name: ends_after
+          in: query
+          description: Filter bans by end date
+          required: false
+          schema:
+            type: integer
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ban'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete bans depending on filters (admin only)
+      description: Delete bans depending on filters (admin only).
+      tags:
+        - bans
+        - delete
+      security:
+        - HttpAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: ID of a ban to delete
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: target_id
+          in: query
+          description: ID of the target of the ban
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: type
+          in: query
+          description: Filter bans by type
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            enum:
+              - mute
+              - ban
+        - name: issuer_id
+          in: query
+          description: Filter bans by issuer ID
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/bans/{id}:
+    get:
+      summary: Get a ban by ID
+      description: Get a ban by ID.
+      tags:
+        - bans
+        - get
+      security:
+        - HttpAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of a ban to get
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ban'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      summary: Update a ban by ID
+      description: Update a ban by ID.
+      tags:
+        - bans
+        - update
+      security:
+        - HttpAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of a ban to update
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: New reason
+                duration:
+                  type: integer
+                  description: New duration in hours (will start from now)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ban'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a ban by ID
+      description: Delete a ban by ID.
+      tags:
+        - bans
+        - delete
+      security:
+        - HttpAuth: []
+        - CookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of a ban to delete
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/auth/login:
     post:
       summary: Login
@@ -1061,25 +1529,23 @@ components:
           type: string
         admin:
           type: boolean
-        banned:
-          type: boolean
         total_contributions:
           type: integer
         subscriber_tier:
           type: integer
         created_at:
-          type: string
+          type: integer
           format: date-time
         updated_at:
-          type: string
+          type: integer
           format: date-time
     Message:
       type: object
       properties:
         id:
           type: integer
-        sender:
-          $ref: '#/components/schemas/User'
+        sender_id:
+          type: integer
         content:
           type: string
         flagged:
@@ -1089,10 +1555,10 @@ components:
         censored:
           type: boolean
         created_at:
-          type: string
+          type: integer
           format: date-time
         updated_at:
-          type: string
+          type: integer
           format: date-time
     Error:
         type: object
@@ -1100,6 +1566,31 @@ components:
           error:
             type: string
 
+    Ban:
+      type: object
+      properties:
+        id:
+          type: integer
+        target_id:
+          type: integer
+        type:
+          type: string
+          enum:
+            - mute
+            - ban
+        reason:
+          type: string
+        issuer_id:
+          type: integer
+        ends_at:
+          type: integer
+          format: date-time
+        created_at:
+          type: integer
+          format: date-time
+        updated_at:
+          type: integer
+          format: date-time
 
   securitySchemes:
     HttpAuth:
@@ -1131,3 +1622,5 @@ tags:
     description: Message management
   - name: auth
     description: Authentication
+  - name: bans
+    description: Ban management
