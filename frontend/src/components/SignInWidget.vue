@@ -1,12 +1,12 @@
 <template>
-  <div class="about">
-    <h1>This is JukeBox about page</h1>
+  <div class="authwidget sign-in">
+    <h1>This is JukeBox Sign In widget</h1>
   </div>
 </template>
 
-<style>
+<style scoped>
 @media (min-width: 1024px) {
-  .about {
+  .sign-in {
     min-height: 100vh;
     display: flex;
     align-items: center;
