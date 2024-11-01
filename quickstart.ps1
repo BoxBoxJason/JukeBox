@@ -1,13 +1,33 @@
-# Get the directory of the script
-$JUKEBOX_SCRIPT_DIR = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
-$JUKEBOX_FRONTEND_DIR = Join-Path -Path $JUKEBOX_SCRIPT_DIR -ChildPath "frontend"
+# Stop script execution if any command fails
+$ErrorActionPreference = 'Stop'
 
-# Change to the frontend directory, install dependencies, and build
+# Define the directory variables
+$JUKEBOX_SCRIPT_DIR = Split-Path -Parent -Path $MyInvocation.MyCommand.Path
+$JUKEBOX_FRONTEND_DIR = Join-Path -Path $JUKEBOX_SCRIPT_DIR -ChildPath "frontend"
+$JUKEBOX_BIN_DIR = Join-Path -Path $JUKEBOX_SCRIPT_DIR -ChildPath "bin"
+$JUKEBOX_MAIN_GO = Join-Path -Path $JUKEBOX_SCRIPT_DIR -ChildPath "cmd\server\main.go"
+$JUKEBOX_EXECUTABLE = Join-Path -Path $JUKEBOX_BIN_DIR -ChildPath "jukebox"
+
+# Change directory to the frontend directory
 Set-Location -Path $JUKEBOX_FRONTEND_DIR
+
+# Run npm install and build
 npm install
 npm run build
 
-# Change back to the script's directory, tidy Go modules, and run the server
+# Change directory back to the script directory
 Set-Location -Path $JUKEBOX_SCRIPT_DIR
+
+# Tidy up Go modules
 go mod tidy
-go run ./cmd/server/main.go
+
+# Create the bin directory if it doesn't exist
+if (!(Test-Path -Path $JUKEBOX_BIN_DIR)) {
+    New-Item -ItemType Directory -Path $JUKEBOX_BIN_DIR
+}
+
+# Build the Go application
+go build -o $JUKEBOX_EXECUTABLE $JUKEBOX_MAIN_GO
+
+# Run the jukebox application
+& $JUKEBOX_EXECUTABLE
