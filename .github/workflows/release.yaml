@@ -46,6 +46,7 @@ jobs:
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
 
       - name: Upload binaries
         uses: actions/upload-release-asset@v1
