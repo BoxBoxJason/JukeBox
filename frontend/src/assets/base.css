@@ -20,7 +20,7 @@
   --vt-v-green: #6adfb2;
 
   --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
+  --vt-c-text-light-2: #10375c;
   --vt-c-text-dark-1: var(--vt-c-white);
   --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
 }
@@ -31,12 +31,14 @@
   --color-background-soft: var(--vt-c-white-soft);
   --color-background-mute: var(--vt-c-white-mute);
   --color-bouton-color: var(--vt-c-grey);
+  --color-login: var(--vt-c-white-soft);
+  --color-register: var(--vt-c-white);
 
   --color-border: var(--vt-c-divider-light-2);
   --color-border-hover: var(--vt-c-divider-light-1);
 
   --color-heading: var(--vt-v-orange);
-  --color-text: var(--vt-c-text-light-1);
+  --color-text: var(--vt-c-text-light-2);
 
   --section-gap: 160px;
 }
@@ -47,6 +49,8 @@
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);
     --color-bouton: var(--vt-c-grey);
+    --color-login: var(--vt-c-black-soft);
+    --color-register: var(--vt-c-grey);
 
     --color-border: var(--vt-c-divider-dark-2);
     --color-border-hover: var(--vt-c-divider-dark-1);
@@ -66,7 +70,14 @@
 
 @font-face {
   font-family: 'Gagalin';
-  src: url('@/assets/Gagalin-Regular.otf') format('opentype');
+  src: url('@/assets/fonts/Gagalin-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'OpenSans';
+  src: url('@/assets/fonts/OpenSans.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -80,21 +91,12 @@ body {
     background-color 0.5s;
   line-height: 1.6;
   font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    'Gagalin',
-    sans-serif;
+    'OpenSans',
+    'Gagalin';
   font-size: 15px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+
