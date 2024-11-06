@@ -5,9 +5,8 @@ TODO: Transformer contribuer et help pour pouvoir aller sur une autre page
 TODO: Ajouter bouton sign in et register
 TODO: Boite message
 
-<script setup lang="ts">
+<script>
 import { ref } from 'vue'
-import Iconbouton from '../components/icons/IconButton.vue'
 
 const text = ref('')
 </script>
@@ -17,19 +16,28 @@ const text = ref('')
       <div class="message-input-container">
         <input v-model="text" class="input-prompt" placeholder="What do you want to play ?"/>
         <button class="send-button">
-          <Iconbouton />
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="3.12 1 17 24" fill="none">
+            <path d="M7 14.5L12 9.5L17 14.5" stroke=var(--color-background-mute) stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>  
+          </svg>
         </button>
       </div>
+
+      <div class="login-container">
+        <button class="sign-in">Sign in</button>
+        <button class="register">Register</button>
+      </div>
+
       <div class="info-container">
         <p class="copyright">©2024 JukeBox</p>
         <p class="help"><u>Help ?</u></p>
         <p class="contribuer"><u>Contribuer</u></p>
       </div>
-    </div>
+  </div>
 
-    <div class="left-bar">
+  <div class="left-bar">
       <p class="title">Jukebox</p>
-    </div>
+  </div>
+  
 </template>
 
 <style scoped>
@@ -59,7 +67,7 @@ const text = ref('')
   position: absolute;
   display: flex;
   align-items: center;
-  width: 60%;
+  width: 65%;
   height: 6%;
 }
 
@@ -125,6 +133,42 @@ const text = ref('')
 .contribuer{
   position: absolute;
   right: 9%;
+}
+
+.login-container{
+  position: absolute;
+  width: 20%;
+  height: 5%;
+  top: 2%;
+  right: 2%;
+}
+
+.sign-in{
+  position: absolute;
+  width: 46%;
+  height: 100%;
+  left: 0%;
+  border-radius: 100px;
+  background-color: var(--color-login);
+  font-size: 16px;
+  color:var(--color-text);
+  border: 1px solid;
+  cursor: pointer;
+  border-color: black;
+}
+
+.register{
+  position: absolute;
+  width: 46%;
+  height: 100%;
+  right: 0%;
+  border-radius: 100px;
+  background-color: var(--color-register);
+  font-size: 16px;
+  color:var(--color-text);
+  border: 1px solid;
+  cursor: pointer;
+  border-color: black;
 }
 </style>
 
