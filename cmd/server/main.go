@@ -2,7 +2,9 @@ package main
 
 import (
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/boxboxjason/jukebox/internal/api"
 	"github.com/boxboxjason/jukebox/internal/constants"
@@ -26,9 +28,19 @@ func main() {
 	main_router.Use(middleware.RequestID) // Generate a request ID for every request (might delete that later)
 
 	// Serve the frontend
-	frontend_fs := http.FileServer(http.Dir(path.Join(".", "frontend", "dist")))
-	main_router.Handle("/*", frontend_fs)
-	logger.Info("Serving frontend at \"/\" from", path.Join(".", "frontend", "dist"))
+	frontend_dir := path.Join(".", "frontend", "dist")
+	frontend_fs := http.FileServer(http.Dir(frontend_dir))
+	main_router.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+		requested_path := filepath.Join(frontend_dir, r.URL.Path)
+		if _, err := os.Stat(requested_path); os.IsNotExist(err) || r.URL.Path == "/" {
+			// Serve index.html for unmatched routes or root path
+			http.ServeFile(w, r, filepath.Join(frontend_dir, "index.html"))
+		} else {
+			// Serve static file
+			frontend_fs.ServeHTTP(w, r)
+		}
+	})
+	logger.Info("Serving frontend at \"/\" from", frontend_dir)
 
 	// Serve the API
 	api_router := api.ApiRouter()
