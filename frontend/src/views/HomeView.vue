@@ -5,38 +5,66 @@ TODO: Transformer contribuer et help pour pouvoir aller sur une autre page
 TODO: Ajouter bouton sign in et register
 TODO: Boite message
 
-<script>
-import { ref } from 'vue'
+<script lang="ts">
+import { defineComponent, ref } from 'vue'
+import SignIn from '../components/SignInWidget.vue'
 
-const text = ref('')
+const text = ref<string>("")
+
+export default defineComponent({
+  components: {
+    SignIn
+  },
+  setup() {
+    const isSignInVisible = ref<boolean>(false) // Typage de isSignInVisible en booléen
+
+    function toggleSignIn() {
+      // Inverse la valeur de isSignInVisible
+      isSignInVisible.value = !isSignInVisible.value
+    }
+
+    return {
+      isSignInVisible,
+      toggleSignIn
+    }
+  }
+})
 </script>
 
 <template>
+
+  <!-- Page principale -->
   <div class="main-container">
-      <div class="message-input-container">
-        <input v-model="text" class="input-prompt" placeholder="What do you want to play ?"/>
-        <button class="send-button">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="3.12 1 17 24" fill="none">
-            <path d="M7 14.5L12 9.5L17 14.5" stroke=var(--color-background-mute) stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>  
-          </svg>
-        </button>
-      </div>
 
-      <div class="login-container">
-        <button class="sign-in">Sign in</button>
-        <button class="register">Register</button>
-      </div>
+    <div class="message-input-container">
+      <input class="input-prompt" placeholder="What do you want to play ?"/>
+      <button class="send-button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="3.12 1 17 24" fill="none">
+          <path d="M7 14.5L12 9.5L17 14.5" stroke=var(--color-background-mute) stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>  
+        </svg>
+      </button>
+    </div>
 
-      <div class="info-container">
-        <p class="copyright">©2024 JukeBox</p>
-        <p class="help"><u>Help ?</u></p>
-        <p class="contribuer"><u>Contribuer</u></p>
-      </div>
+    <div class="login-container">       
+      <button class="sign-in" @click="toggleSignIn">Sign In</button>
+      <button class="register">Register</button>
+    </div>
+
+    <div class="info-container">
+      <p class="copyright">©2024 JukeBox</p>
+      <p class="help"><u>Help ?</u></p>
+      <p class="contribuer"><u>Contribuer</u></p>
+    </div>
   </div>
 
+  <!-- Barre chat -->
   <div class="left-bar">
       <p class="title">Jukebox</p>
   </div>
+
+  <!-- Pop Up -->
+  <SignIn v-if="isSignInVisible" @close="toggleSignIn"/>
+  
   
 </template>
 
@@ -113,6 +141,8 @@ const text = ref('')
 
 .info-container{
   position: absolute;
+  font-family: 'Open Sans';
+  font-size: 14px;
   width: 100%;
   height: 5%;
   bottom: 0%;
@@ -150,6 +180,7 @@ const text = ref('')
   left: 0%;
   border-radius: 100px;
   background-color: var(--color-login);
+  font-family: 'Open Sans';
   font-size: 16px;
   color:var(--color-text);
   border: 1px solid;
@@ -164,11 +195,13 @@ const text = ref('')
   right: 0%;
   border-radius: 100px;
   background-color: var(--color-register);
+  font-family: 'Open Sans';
   font-size: 16px;
   color:var(--color-text);
   border: 1px solid;
   cursor: pointer;
   border-color: black;
 }
+
 </style>
 
