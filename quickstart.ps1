@@ -12,8 +12,8 @@ $JUKEBOX_EXECUTABLE = Join-Path -Path $JUKEBOX_BIN_DIR -ChildPath "jukebox"
 Set-Location -Path $JUKEBOX_FRONTEND_DIR
 
 # Run npm install and build
-npm install
-npm run build
+npm --prefix $JUKEBOX_FRONTEND_DIR install
+npm --prefix $JUKEBOX_FRONTEND_DIR run build
 
 # Change directory back to the script directory
 Set-Location -Path $JUKEBOX_SCRIPT_DIR
