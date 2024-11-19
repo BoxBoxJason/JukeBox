@@ -733,8 +733,6 @@ paths:
             schema:
               type: object
               properties:
-                sender:
-                  type: integer
                 message:
                   type: string
       responses:
