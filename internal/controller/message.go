@@ -1,7 +1,7 @@
 package db_controller
 
 import (
-	"sync"
+	"strings"
 
 	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
@@ -16,7 +16,7 @@ import (
 func CreateMessage(db *gorm.DB, message string, user *db_model.User) (*db_model.Message, error) {
 	db_message := db_model.Message{
 		Sender:  user,
-		Content: message,
+		Content: strings.TrimSpace(message),
 	}
 
 	// Open db connection
@@ -29,19 +29,12 @@ func CreateMessage(db *gorm.DB, message string, user *db_model.User) (*db_model.
 		defer db_model.CloseConnection(db)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(2)
+	err := db_message.CreateMessage(db)
+	if err != nil {
+		return &db_message, err
+	}
 
-	// Create the message and increase the user's contributions count
-	var err error
-	go func() {
-		defer wg.Done()
-		err = db_message.CreateMessage(db)
-	}()
-	go func() {
-		defer wg.Done()
-		user.IncreaseContributionsCount(db)
-	}()
+	err = user.IncreaseContributionsCount(db)
 
 	return &db_message, err
 }
