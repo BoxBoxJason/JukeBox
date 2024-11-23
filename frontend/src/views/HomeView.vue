@@ -8,24 +8,46 @@ TODO: Boite message
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import SignIn from '../components/SignInWidget.vue'
+import Register from '../components/RegisterWidget.vue'
+import IconSendButton from '../components/icons/Icon_send_button.vue'
 
 const text = ref<string>("")
 
 export default defineComponent({
   components: {
-    SignIn
+    SignIn,
+    Register,
+    IconSendButton
   },
   setup() {
     const isSignInVisible = ref<boolean>(false) // Typage de isSignInVisible en booléen
+    const isRegisterVisible = ref<boolean>(false) // Typage de isSignInVisible en booléen
+    const passwordInput = ref<string>("")
 
     function toggleSignIn() {
       // Inverse la valeur de isSignInVisible
       isSignInVisible.value = !isSignInVisible.value
     }
 
+    function toggleRegister() {
+      // Inverse la valeur de isSignInVisible
+      isRegisterVisible.value = !isRegisterVisible.value
+    }
+
+    function togglePassword() {
+      if (passwordInput.value == 'password') {
+        passwordInput.value = 'text'
+      } else {
+        passwordInput.value = 'password'
+      }
+    }
+
     return {
       isSignInVisible,
-      toggleSignIn
+      isRegisterVisible,
+      toggleSignIn,
+      toggleRegister,
+      togglePassword
     }
   }
 })
@@ -39,15 +61,13 @@ export default defineComponent({
     <div class="message-input-container">
       <input class="input-prompt" placeholder="What do you want to play ?"/>
       <button class="send-button">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="3.12 1 17 24" fill="none">
-          <path d="M7 14.5L12 9.5L17 14.5" stroke=var(--color-background-mute) stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>  
-        </svg>
+        <IconSendButton />
       </button>
     </div>
 
     <div class="login-container">       
       <button class="sign-in" @click="toggleSignIn">Sign In</button>
-      <button class="register">Register</button>
+      <button class="register" @click="toggleRegister">Register</button>
     </div>
 
     <div class="info-container">
@@ -64,7 +84,7 @@ export default defineComponent({
 
   <!-- Pop Up -->
   <SignIn v-if="isSignInVisible" @close="toggleSignIn"/>
-  
+  <Register v-if="isRegisterVisible" @close="toggleRegister"/>
   
 </template>
 
