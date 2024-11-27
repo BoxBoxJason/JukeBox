@@ -1,6 +1,9 @@
 package httputils
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -142,107 +145,260 @@ func RetrieveIntListValueParameter(r *http.Request, parameter_name string, missi
 
 // RetrievePostFormStringParameter retrieves a single-value parameter from form data
 func RetrievePostFormIntParameter(r *http.Request, parameter_name string, missing_ok bool) (int, error) {
-	err := r.ParseForm()
-	if err != nil {
-		return 0, NewBadRequestError("Failed to parse form data")
-	}
+	contentType := r.Header.Get("Content-Type")
 
-	values := r.PostForm[parameter_name]
-	if len(values) == 0 {
-		if !missing_ok {
-			return 0, NewBadRequestError("Missing parameter: " + parameter_name)
-		} else {
+	if contentType == "application/x-www-form-urlencoded" {
+		err := r.ParseForm()
+		if err != nil {
+			return 0, NewBadRequestError("Failed to parse form data")
+		}
+		values := r.PostForm[parameter_name]
+		if len(values) == 0 {
+			if !missing_ok {
+				return 0, NewBadRequestError("Missing parameter: " + parameter_name)
+			}
 			return 0, nil
 		}
-	}
-	if len(values) > 1 {
-		return 0, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		return strconv.Atoi(strings.TrimSpace(values[0]))
+	} else if strings.Contains(contentType, "application/json") {
+		// Buffer the body to allow re-reading
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return 0, NewBadRequestError("Failed to read request body")
+		}
+		// Restore the original body for further use
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// Decode the JSON payload
+		var body map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &body); err != nil {
+			return 0, NewBadRequestError("Invalid JSON payload")
+		}
+
+		// Extract the parameter
+		if value, exists := body[parameter_name]; exists {
+			if floatValue, ok := value.(float64); ok { // JSON numbers are float64
+				return int(floatValue), nil
+			}
+			return 0, NewBadRequestError("Invalid type for parameter: " + parameter_name)
+		}
+		if !missing_ok {
+			return 0, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
 	}
 
-	return strconv.Atoi(strings.TrimSpace(values[0]))
+	return 0, NewBadRequestError("Unsupported Content-Type")
 }
 
 // RetrievePostFormStringParameter retrieves a single-value parameter from form data
 func RetrievePostFormStringParameter(r *http.Request, parameter_name string, missing_ok bool) (string, error) {
-	err := r.ParseForm()
-	if err != nil {
-		return "", NewBadRequestError("Failed to parse form data")
-	}
+	contentType := r.Header.Get("Content-Type")
 
-	values := r.PostForm[parameter_name]
-	if len(values) == 0 {
-		if !missing_ok {
-			return "", NewBadRequestError("Missing parameter: " + parameter_name)
-		} else {
+	if contentType == "application/x-www-form-urlencoded" {
+		err := r.ParseForm()
+		if err != nil {
+			return "", NewBadRequestError("Failed to parse form data")
+		}
+		values := r.PostForm[parameter_name]
+		if len(values) == 0 {
+			if !missing_ok {
+				return "", NewBadRequestError("Missing parameter: " + parameter_name)
+			}
 			return "", nil
 		}
-	}
-	if len(values) > 1 {
-		return "", NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		return strings.TrimSpace(values[0]), nil
+	} else if strings.Contains(contentType, "application/json") {
+		// Buffer the body to allow re-reading
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return "", NewBadRequestError("Failed to read request body")
+		}
+		// Restore the original body for further use
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// Decode the JSON payload
+		var body map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &body); err != nil {
+			return "", NewBadRequestError("Invalid JSON payload")
+		}
+
+		// Extract the parameter
+		if value, exists := body[parameter_name]; exists {
+			if str, ok := value.(string); ok {
+				return strings.TrimSpace(str), nil
+			}
+			return "", NewBadRequestError("Invalid type for parameter: " + parameter_name)
+		}
+
+		if !missing_ok {
+			return "", NewBadRequestError("Missing parameter: " + parameter_name)
+		}
 	}
 
-	return strings.TrimSpace(values[0]), nil
+	return "", NewBadRequestError("Unsupported Content-Type")
 }
 
 // RetrievePostFormBoolParamater retrieves a boolean value for a given parameter name from form data.
 func RetrievePostFormBoolParameter(r *http.Request, parameter_name string, missing_ok bool) ([]bool, error) {
-	err := r.ParseForm()
-	if err != nil {
-		return []bool{}, NewBadRequestError("Failed to parse form data")
-	}
+	contentType := r.Header.Get("Content-Type")
 
-	values := r.PostForm[parameter_name]
-	if len(values) == 0 {
-		if !missing_ok {
-			return []bool{}, NewBadRequestError("Missing parameter: " + parameter_name)
+	if contentType == "application/x-www-form-urlencoded" {
+		err := r.ParseForm()
+		if err != nil {
+			return nil, NewBadRequestError("Failed to parse form data")
 		}
-		return []bool{}, nil
-	}
-	if len(values) > 1 {
-		return []bool{}, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		values := r.PostForm[parameter_name]
+		if len(values) == 0 {
+			if !missing_ok {
+				return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+			}
+			return nil, nil
+		}
+		result, err := strconv.ParseBool(strings.TrimSpace(values[0]))
+		if err != nil {
+			return nil, NewBadRequestError("Invalid boolean value: " + values[0])
+		}
+		return []bool{result}, nil
+	} else if strings.Contains(contentType, "application/json") {
+		// Buffer the body to allow re-reading
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return nil, NewBadRequestError("Failed to read request body")
+		}
+		// Restore the original body for further use
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// Decode the JSON payload
+		var body map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &body); err != nil {
+			return nil, NewBadRequestError("Invalid JSON payload")
+		}
+
+		// Extract the parameter
+		if value, exists := body[parameter_name]; exists {
+			if boolValue, ok := value.(bool); ok {
+				return []bool{boolValue}, nil
+			}
+			return nil, NewBadRequestError("Invalid type for parameter: " + parameter_name)
+		}
+		if !missing_ok {
+			return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
 	}
 
-	result, err := strconv.ParseBool(strings.TrimSpace(values[0]))
-	if err != nil {
-		return []bool{}, NewBadRequestError("Invalid boolean value: " + values[0])
-	}
-	return []bool{result}, nil
+	return nil, NewBadRequestError("Unsupported Content-Type")
 }
 
 // RetrievePostFormStringListValueParameter retrieves a list of values for a given parameter name from form data.
 func RetrievePostFormStringListValueParameter(r *http.Request, parameter_name string, missing_ok bool) ([]string, error) {
-	if err := r.ParseForm(); err != nil {
-		return nil, NewBadRequestError("Failed to parse form data")
+	contentType := r.Header.Get("Content-Type")
+
+	if contentType == "application/x-www-form-urlencoded" {
+		if err := r.ParseForm(); err != nil {
+			return nil, NewBadRequestError("Failed to parse form data")
+		}
+		values := r.PostForm[parameter_name]
+		if len(values) == 0 && !missing_ok {
+			return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
+		for i, value := range values {
+			values[i] = strings.TrimSpace(value)
+		}
+		return values, nil
+	} else if strings.Contains(contentType, "application/json") {
+		// Buffer the body to allow re-reading
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return nil, NewBadRequestError("Failed to read request body")
+		}
+		// Restore the original body for further use
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// Decode the JSON payload
+		var body map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &body); err != nil {
+			return nil, NewBadRequestError("Invalid JSON payload")
+		}
+
+		// Extract the parameter
+		if value, exists := body[parameter_name]; exists {
+			if list, ok := value.([]interface{}); ok {
+				strList := []string{}
+				for _, item := range list {
+					if str, ok := item.(string); ok {
+						strList = append(strList, strings.TrimSpace(str))
+					} else {
+						return nil, NewBadRequestError("Invalid type in list for parameter: " + parameter_name)
+					}
+				}
+				return strList, nil
+			}
+			return nil, NewBadRequestError("Invalid type for parameter: " + parameter_name)
+		}
+		if !missing_ok {
+			return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
 	}
-	values := r.PostForm[parameter_name]
-	if len(values) == 0 && !missing_ok {
-		return nil, NewBadRequestError("Missing parameter: " + parameter_name)
-	}
-	for i, value := range values {
-		values[i] = strings.TrimSpace(value)
-	}
-	return values, nil
+
+	return nil, NewBadRequestError("Unsupported Content-Type")
 }
 
 // RetrievePostFormIntListValueParameter retrieves a list of integer values for a given parameter name from form data.
 func RetrievePostFormIntListValueParameter(r *http.Request, parameter_name string, missing_ok bool) ([]int, error) {
-	if err := r.ParseForm(); err != nil {
-		return nil, NewBadRequestError("Failed to parse form data")
-	}
-	values := r.PostForm[parameter_name]
-	if len(values) == 0 && !missing_ok {
-		return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+	contentType := r.Header.Get("Content-Type")
+
+	if contentType == "application/x-www-form-urlencoded" {
+		if err := r.ParseForm(); err != nil {
+			return nil, NewBadRequestError("Failed to parse form data")
+		}
+		values := r.PostForm[parameter_name]
+		if len(values) == 0 && !missing_ok {
+			return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
+
+		intValues := make([]int, len(values))
+		for i, value := range values {
+			intValue, err := strconv.Atoi(strings.TrimSpace(value))
+			if err != nil {
+				return nil, NewBadRequestError("Invalid integer value: " + value)
+			}
+			intValues[i] = intValue
+		}
+		return intValues, nil
+	} else if strings.Contains(contentType, "application/json") {
+		// Buffer the body to allow re-reading
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return nil, NewBadRequestError("Failed to read request body")
+		}
+		// Restore the original body for further use
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		// Decode the JSON payload
+		var body map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &body); err != nil {
+			return nil, NewBadRequestError("Invalid JSON payload")
+		}
+		// Extract the parameter
+		if value, exists := body[parameter_name]; exists {
+			if list, ok := value.([]interface{}); ok {
+				intList := []int{}
+				for _, item := range list {
+					if floatValue, ok := item.(float64); ok {
+						intList = append(intList, int(floatValue))
+					} else {
+						return nil, NewBadRequestError("Invalid type in list for parameter: " + parameter_name)
+					}
+				}
+				return intList, nil
+			}
+			return nil, NewBadRequestError("Invalid type for parameter: " + parameter_name)
+		}
+		if !missing_ok {
+			return nil, NewBadRequestError("Missing parameter: " + parameter_name)
+		}
 	}
 
-	int_values := make([]int, len(values))
-	for i, value := range values {
-		int_value, err := strconv.Atoi(strings.TrimSpace(value))
-		if err != nil {
-			return nil, NewBadRequestError("Invalid integer value: " + value)
-		}
-		int_values[i] = int_value
-	}
-	return int_values, nil
+	return nil, NewBadRequestError("Unsupported Content-Type")
 }
 
 func ReadCookie(r *http.Request, cookie_name string) (string, error) {
