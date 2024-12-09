@@ -1,63 +1,125 @@
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
-import IconConnect from "./icons/Icon_connect.vue"
-import IconQuit from "./icons/Icon_quit.vue"
-import IconPassword from './icons/Icon_password.vue';
+import { defineComponent, handleError, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import IconConnect from './icons/Icon_connect.vue'
+import IconQuit from './icons/Icon_quit.vue'
+import IconPassword from './icons/Icon_password.vue'
 
 export default defineComponent({
+  name: 'loginForm',
+
   components: {
     IconConnect,
     IconQuit,
     IconPassword
   },
+
   emits: ['close'],
 
-  data() {
-    return{
-      nomIcon: "show",
-      typeInput: "password",
+  setup(_, { emit }) {
+    // Variables
+    const nomIcon = ref('show')
+    const typeInput = ref('password')
+    const formData = reactive({ username_or_email: '', password: '' })
+    const errorMessage = ref<string | null>(null)
+    const isSubmitting = ref(false)
+    const router = useRouter()
+
+    // Fonctions
+    const closepopup = () => {
+      // Émet l'événement close pour le composant parent
+      emit('close')
     }
-  },
 
-  methods: {
-    closepopup() {
-      // Émet l'événement `close` pour le composant parent
-      this.$emit('close');
-    },
+    const togglePasswordButton = () => {
+      if (nomIcon.value == 'show') {
+        nomIcon.value = 'hide'
+        typeInput.value = 'text'
+      } else {
+        nomIcon.value = 'show'
+        typeInput.value = 'password'
+      }
+    }
 
-    togglePasswordButton() {
-      if (this.nomIcon == "show"){
-        this.nomIcon = "hide"
-        this.typeInput = "text"
+    const handleSubmit = async () => {
+      errorMessage.value = null // Réinitialise le message d'erreur
+      isSubmitting.value = true // Bloque le bouton pendant la soumission
+
+      try {
+        const response = await fetch("http://localhost:3000/api/auth/login", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        })
+
+        if (response.ok) {
+          // Succès : Traitez les données de la réponse ou redirigez
+          const data = await response.json()
+          errorMessage.value = "Connexion réussie !";
+          console.log("Réponse :", data);
+        } else {
+          errorMessage.value = await response.text()
+        }
+      } catch (err) {
+        // Gérer les erreurs réseau
+        if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+          errorMessage.value = 'Impossible de se connecter au serveur.'
+        } else {
+          errorMessage.value = (err as Error).message || 'Erreur réseau inattendue.'
+        }
+      } finally {
+        isSubmitting.value = false // Débloque le bouton
       }
-      else{
-        this.nomIcon = "show"
-        this.typeInput = "password"
-      }
-    },
-  },
+    }
+
+    return {
+      errorMessage,
+      nomIcon,
+      typeInput,
+      formData,
+      closepopup,
+      togglePasswordButton,
+      handleSubmit
+    }
+  }
 })
 </script>
 
 <template>
   <div class="widget-container">
-    <div class="widget-sign-in">
+    <form class="widget-sign-in" @submit.prevent="handleSubmit">
       <button class="quit" @click="closepopup">
         <IconQuit />
       </button>
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
       <h1 class="title">Welcome back on JukeBox !</h1>
       <h2 class="username-text">Username</h2>
-      <input class="username-input" placeholder="Type your username here !"/>
+      <input
+        id="email"
+        v-model="formData.username_or_email"
+        class="username-input"
+        placeholder="Type your username here !"
+        required
+      />
       <h3 class="password-text">Password</h3>
-      <input :type="typeInput" class="password-input" placeholder="Type your password here !"/>
+      <input
+        id="password"
+        v-model="formData.password"
+        :type="typeInput"
+        class="password-input"
+        placeholder="Type your password here !"
+        required
+      />
       <h4 class="forget-pass"><u>Forget password ?</u></h4>
       <button class="password-button" @click="togglePasswordButton">
-        <IconPassword :name="nomIcon"/>
+        <IconPassword :name="nomIcon" />
       </button>
-      <button class="connect-button">
+      <button class="connect-button" type="submit">
         <IconConnect />
       </button>
-    </div>
+    </form>
   </div>
 </template>
 
@@ -71,7 +133,7 @@ export default defineComponent({
   display: flex;
   align-items: center; /* Centre verticalement */
   justify-content: center; /* Centre horizontalement, optionnel */
-  background-color: rgba(0,0,0, 0.8);
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 .widget-sign-in {
@@ -84,14 +146,14 @@ export default defineComponent({
   background-color: var(--color-background);
 }
 
-.title{
+.title {
   position: relative;
   top: 12%;
   font-family: 'Open Sans';
   font-size: 30px;
 }
 
-.username-input{
+.username-input {
   position: absolute;
   width: 90%;
   height: 8%;
@@ -103,7 +165,7 @@ export default defineComponent({
   color: var(--color-text);
 }
 
-.username-text{
+.username-text {
   position: absolute;
   top: 31%;
   font-family: 'Open Sans';
@@ -111,7 +173,7 @@ export default defineComponent({
   left: 6%;
 }
 
-.password-input{
+.password-input {
   position: absolute;
   width: 90%;
   height: 8%;
@@ -123,7 +185,7 @@ export default defineComponent({
   color: var(--color-text);
 }
 
-.password-text{
+.password-text {
   position: absolute;
   top: 50%;
   font-family: 'Open Sans';
@@ -131,7 +193,7 @@ export default defineComponent({
   left: 6%;
 }
 
-.forget-pass{
+.forget-pass {
   position: absolute;
   top: 69%;
   left: 6%;
@@ -139,7 +201,7 @@ export default defineComponent({
   font-size: 14px;
 }
 
-.connect-button{
+.connect-button {
   position: absolute;
   width: 10%;
   height: 10%;
@@ -148,7 +210,7 @@ export default defineComponent({
   border: none;
 }
 
-.quit{
+.quit {
   position: absolute;
   width: 6%;
   height: 5%;
@@ -158,7 +220,7 @@ export default defineComponent({
   border: none;
 }
 
-.password-button{
+.password-button {
   position: absolute;
   width: 8%;
   height: 5%;
@@ -168,4 +230,3 @@ export default defineComponent({
   border: none;
 }
 </style>
-
