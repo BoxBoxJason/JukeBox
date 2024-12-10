@@ -23,7 +23,6 @@ export default defineComponent({
     const formData = reactive({ username_or_email: '', password: '' })
     const errorMessage = ref<string | null>(null)
     const isSubmitting = ref(false)
-    const router = useRouter()
 
     // Fonctions
     const closepopup = () => {
@@ -46,7 +45,7 @@ export default defineComponent({
       isSubmitting.value = true // Bloque le bouton pendant la soumission
 
       try {
-        const response = await fetch("http://localhost:3000/api/auth/login", {
+        const response = await fetch("https://localhost:3000/api/auth/login", {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -71,6 +70,8 @@ export default defineComponent({
         }
       } finally {
         isSubmitting.value = false // Débloque le bouton
+        formData.password = ''
+        formData.username_or_email = ''
       }
     }
 
@@ -81,7 +82,8 @@ export default defineComponent({
       formData,
       closepopup,
       togglePasswordButton,
-      handleSubmit
+      handleSubmit,
+      isSubmitting
     }
   }
 })
@@ -113,10 +115,10 @@ export default defineComponent({
         required
       />
       <h4 class="forget-pass"><u>Forget password ?</u></h4>
-      <button class="password-button" @click="togglePasswordButton">
+      <button class="password-button" @click="togglePasswordButton" type="button">
         <IconPassword :name="nomIcon" />
       </button>
-      <button class="connect-button" type="submit">
+      <button class="connect-button" v-bind:disabled="isSubmitting" type="submit">
         <IconConnect />
       </button>
     </form>
