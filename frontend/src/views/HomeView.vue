@@ -1,8 +1,6 @@
 TODO: gérer le zoom
 TODO: Ajouter l'element qui change au son de la musique
 TODO: Gérer les langues ?
-TODO: Transformer contribuer et help pour pouvoir aller sur une autre page
-TODO: Ajouter bouton sign in et register
 TODO: Boite message
 
 <script lang="ts">
@@ -73,7 +71,7 @@ export default defineComponent({
     <div class="info-container">
       <p class="copyright">©2024 JukeBox</p>
       <p class="help"><u>Help ?</u></p>
-      <p class="contribuer"><u>Contribuer</u></p>
+      <p class="about_us"><u>About us</u></p>
     </div>
   </div>
 
@@ -180,7 +178,7 @@ export default defineComponent({
 
 }
 
-.contribuer{
+.about_us{
   position: absolute;
   right: 9%;
 }
