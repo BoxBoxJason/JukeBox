@@ -1,8 +1,8 @@
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
-import IconConnect from "./icons/Icon_connect.vue"
-import IconQuit from "./icons/Icon_quit.vue"
-import IconPassword from './icons/Icon_password.vue';
+import { defineComponent, ref, reactive } from 'vue'
+import IconConnect from './icons/Icon_connect.vue'
+import IconQuit from './icons/Icon_quit.vue'
+import IconPassword from './icons/Icon_password.vue'
 
 export default defineComponent({
   components: {
@@ -11,56 +11,124 @@ export default defineComponent({
     IconPassword
   },
 
-  emits: ['close'],
+  emits: ['close','success'],
 
-  data() {
-    return{
-      nomIcon: "show",
-      typeInput: "password",
-    }
-  },
+  setup(_, { emit }) {
+    // Variables
+    const nomIcon = ref('show')
+    const typeInput = ref('password')
+    const formData = reactive({ username: '', email: '', password: '' })
+    const errorMessage = ref<string | null>(null)
+    const isSubmitting = ref(false)
 
-  methods: {
-    closepopup() {
+    // Fonctions
+    const closepopup = () => {
       // Émet l'événement `close` pour le composant parent
-      this.$emit('close');
-    },
-    
-    togglePasswordButton() {
-      if (this.nomIcon == "show"){
-        this.nomIcon = "hide"
-        this.typeInput = "text"
-      }
-      else{
-        this.nomIcon = "show"
-        this.typeInput = "password"
-      }
-    },
+      emit('close')
+    }
 
-  },
+    const togglePasswordButton = () => {
+      if (nomIcon.value == 'show') {
+        nomIcon.value = 'hide'
+        typeInput.value = 'text'
+      } else {
+        nomIcon.value = 'show'
+        typeInput.value = 'password'
+      }
+    }
+
+    const handleSubmit = async () => {
+      errorMessage.value = null // Réinitialise le message d'erreur
+      isSubmitting.value = true // Bloque le bouton pendant la soumission
+
+      try {
+        const response = await fetch('https://localhost:3000/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        })
+
+        if (response.ok) {
+          // Succès : Traitez les données de la réponse ou redirigez
+          const data = await response.json()
+          errorMessage.value = 'Compte correctement crée!'
+          emit('success')
+          emit('close')
+        } else {
+          errorMessage.value = await response.text()
+        }
+      } catch (err) {
+        // Gérer les erreurs réseau
+        if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+          errorMessage.value = 'Impossible de se connecter au serveur.'
+        } else {
+          errorMessage.value = (err as Error).message || 'Erreur réseau inattendue.'
+        }
+      } finally {
+        isSubmitting.value = false // Débloque le bouton
+        formData.password = ''
+        formData.username = ''
+        formData.email = ''
+      }
+    }
+
+    return {
+      nomIcon,
+      typeInput,
+      formData,
+      closepopup,
+      togglePasswordButton,
+      handleSubmit,
+      errorMessage,
+      isSubmitting
+    }
+  }
 })
 </script>
 
 <template>
   <div class="widget-container">
-    <div class="widget-sign-in">
+    <form class="widget-register" @submit.prevent="handleSubmit">
       <button class="quit" @click="closepopup">
         <IconQuit />
       </button>
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
       <h1 class="title">Welcome on JukeBox !</h1>
       <h2 class="username-text">Username</h2>
-      <input class="username-input" placeholder="Type your username here !"/>
+      <input
+        id="username"
+        v-model="formData.username"
+        class="username-input"
+        placeholder="Type your username here !"
+        required
+      />
       <h3 class="email-text">Email</h3>
-      <input type="email" class="email-input" placeholder="Type your email here !"/>
+      <input
+        id="email"
+        v-model="formData.email"
+        type="email"
+        class="email-input"
+        placeholder="Type your email here !"
+        required
+      />
       <h4 class="password-text">Password</h4>
-      <input :type="typeInput" class="password-input" placeholder="Type your password here!" />
-      <button class="password-button" @click="togglePasswordButton">
-        <IconPassword :name="nomIcon"/>
+      <input
+        id="password"
+        v-model="formData.password"
+        :type="typeInput"
+        class="password-input"
+        placeholder="Type your password here!"
+        required
+      />
+      <button class="password-button" @click="togglePasswordButton" type="button">
+        <IconPassword :name="nomIcon" />
       </button>
-      <button class="connect-button">
+      <button class="connect-button" v-bind:disabled="isSubmitting" type="submit">
         <IconConnect />
       </button>
-    </div>
+    </form>
   </div>
 </template>
 
@@ -74,10 +142,10 @@ export default defineComponent({
   display: flex;
   align-items: center; /* Centre verticalement */
   justify-content: center; /* Centre horizontalement, optionnel */
-  background-color: rgba(0,0,0, 0.8);
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
-.widget-sign-in {
+.widget-register {
   position: absolute;
   height: 70%;
   width: 30%;
@@ -87,14 +155,14 @@ export default defineComponent({
   background-color: var(--color-background);
 }
 
-.title{
+.title {
   position: absolute;
   top: 10%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 30px;
 }
 
-.username-input{
+.username-input {
   position: absolute;
   width: 90%;
   height: 8%;
@@ -106,15 +174,15 @@ export default defineComponent({
   color: var(--color-text);
 }
 
-.username-text{
+.username-text {
   position: absolute;
   top: 26%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
 }
 
-.email-input{
+.email-input {
   position: absolute;
   width: 90%;
   height: 8%;
@@ -126,15 +194,15 @@ export default defineComponent({
   color: var(--color-text);
 }
 
-.email-text{
+.email-text {
   position: absolute;
   top: 44%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
 }
 
-.password-input{
+.password-input {
   position: absolute;
   width: 90%;
   height: 8%;
@@ -146,16 +214,15 @@ export default defineComponent({
   color: var(--color-text);
 }
 
-.password-text{
+.password-text {
   position: absolute;
   top: 62%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
-  
 }
 
-.connect-button{
+.connect-button {
   position: absolute;
   width: 10%;
   height: 10%;
@@ -164,7 +231,7 @@ export default defineComponent({
   border: none;
 }
 
-.quit{
+.quit {
   position: absolute;
   width: 6%;
   aspect-ratio: 1 / 1;
@@ -174,7 +241,7 @@ export default defineComponent({
   border: none;
 }
 
-.password-button{
+.password-button {
   position: absolute;
   width: 8%;
   height: 5%;
@@ -184,4 +251,3 @@ export default defineComponent({
   border: none;
 }
 </style>
-
