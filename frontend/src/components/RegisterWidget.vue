@@ -11,7 +11,7 @@ export default defineComponent({
     IconPassword
   },
 
-  emits: ['close'],
+  emits: ['close','success'],
 
   setup(_, { emit }) {
     // Variables
@@ -54,6 +54,8 @@ export default defineComponent({
           // Succès : Traitez les données de la réponse ou redirigez
           const data = await response.json()
           errorMessage.value = 'Compte correctement crée!'
+          emit('success')
+          emit('close')
         } else {
           errorMessage.value = await response.text()
         }
@@ -156,7 +158,7 @@ export default defineComponent({
 .title {
   position: absolute;
   top: 10%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 30px;
 }
 
@@ -175,7 +177,7 @@ export default defineComponent({
 .username-text {
   position: absolute;
   top: 26%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
 }
@@ -195,7 +197,7 @@ export default defineComponent({
 .email-text {
   position: absolute;
   top: 44%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
 }
@@ -215,7 +217,7 @@ export default defineComponent({
 .password-text {
   position: absolute;
   top: 62%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
 }
