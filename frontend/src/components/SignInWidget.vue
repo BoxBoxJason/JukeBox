@@ -14,7 +14,7 @@ export default defineComponent({
     IconPassword
   },
 
-  emits: ['close'],
+  emits: ['close','success'],
 
   setup(_, { emit }) {
     // Variables
@@ -57,7 +57,8 @@ export default defineComponent({
           // Succès : Traitez les données de la réponse ou redirigez
           const data = await response.json()
           errorMessage.value = "Connexion réussie !";
-          console.log("Réponse :", data);
+          emit('success')
+          emit('close')
         } else {
           errorMessage.value = await response.text()
         }
@@ -151,7 +152,7 @@ export default defineComponent({
 .title {
   position: relative;
   top: 12%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 30px;
 }
 
@@ -170,7 +171,7 @@ export default defineComponent({
 .username-text {
   position: absolute;
   top: 31%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
 }
@@ -190,7 +191,7 @@ export default defineComponent({
 .password-text {
   position: absolute;
   top: 50%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
   left: 6%;
 }
@@ -199,7 +200,7 @@ export default defineComponent({
   position: absolute;
   top: 69%;
   left: 6%;
-  font-family: 'Open Sans';
+  font-family: 'Roboto';
   font-size: 14px;
 }
 
