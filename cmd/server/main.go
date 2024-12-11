@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/boxboxjason/jukebox/internal/api"
+	"github.com/boxboxjason/jukebox/internal/websocket"
 	"github.com/boxboxjason/jukebox/internal/constants"
 	"github.com/boxboxjason/jukebox/internal/jobs"
 	"github.com/boxboxjason/jukebox/pkg/logger"
@@ -46,6 +47,10 @@ func main() {
 	api_router := api.ApiRouter()
 	main_router.Mount("/api", api_router)
 	logger.Info("Serving API at /api")
+
+	// Serve WebSocket
+	main_router.HandleFunc("/ws/chat", chatwebsocket.ChatWebSocket)
+	logger.Info("Serving WebSocket chat at /ws/chat")
 
 	// Start jobs
 	jobs.SetupJobs()

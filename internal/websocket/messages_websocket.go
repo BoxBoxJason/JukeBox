@@ -38,53 +38,62 @@ func ChatWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	websocket_connection, err := upgrader.Upgrade(w, r, nil)
+	websocketConnection, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		err_msg := "Failed to upgrade connection to websocket"
-		logger.Error(err_msg, err)
-		httputils.SendErrorToClient(w, httputils.NewInternalServerError(err_msg))
+		errMsg := "Failed to upgrade connection to websocket"
+		logger.Error(errMsg, err)
+		httputils.SendErrorToClient(w, httputils.NewInternalServerError(errMsg))
 		return
 	}
-	defer websocket_connection.Close()
+	defer websocketConnection.Close()
 
-	clients[websocket_connection] = user
+	clients[websocketConnection] = user
 	logger.Info("New client connected", user)
 
-	handleMessages(websocket_connection, user)
+	go handleBroadcast()
+	handleMessages(websocketConnection, user)
 }
 
-func handleMessages(websocket_connection *websocket.Conn, user *db_model.User) {
+func handleMessages(websocketConnection *websocket.Conn, user *db_model.User) {
+	defer func() {
+		delete(clients, websocketConnection)
+		logger.Info("Client disconnected", user)
+	}()
+
+	websocketConnection.SetReadDeadline(time.Now().Add(60 * time.Second))
+	websocketConnection.SetPongHandler(func(string) error {
+		websocketConnection.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
 	for {
 		var message WebSocketMessage
-		err := websocket_connection.ReadJSON(&message)
-		if err != nil {
+		if err := websocketConnection.ReadJSON(&message); err != nil {
 			logger.Error("Failed to read message", err)
-			delete(clients, websocket_connection)
 			break
 		}
 
 		// Determine the action and call the appropriate handler
 		switch message.Action {
 		case "create":
-			handleCreateMessage(message, user, websocket_connection)
+			handleCreateMessage(message, user, websocketConnection)
 		case "delete":
-			handleDeleteMessage(message, user, websocket_connection)
+			handleDeleteMessage(message, user, websocketConnection)
 		default:
-			// If the action is unknown, send an error back to the client
-			websocket_connection.WriteJSON(map[string]interface{}{
-				"status":  "error",
-				"message": "Unknown action",
-			})
+				websocketConnection.WriteJSON(map[string]interface{}{
+					"status":  "error",
+					"message": "Unknown action",
+				})
 		}
 	}
 }
 
-func handleCreateMessage(message WebSocketMessage, sender *db_model.User, websocket_connection *websocket.Conn) {
+func handleCreateMessage(message WebSocketMessage, sender *db_model.User, websocketConnection *websocket.Conn) {
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
 		logger.Error("Failed to open database connection", err)
-		websocket_connection.WriteJSON(map[string]interface{}{
+		websocketConnection.WriteJSON(map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to open database connection",
 		})
@@ -93,15 +102,14 @@ func handleCreateMessage(message WebSocketMessage, sender *db_model.User, websoc
 	defer db_model.CloseConnection(db)
 
 	// Create the message
-	new_message := db_model.Message{
+	newMessage := db_model.Message{
 		Sender:  sender,
 		Content: message.Content,
 	}
 
-	err = new_message.CreateMessage(db)
-	if err != nil {
+	if err := newMessage.CreateMessage(db); err != nil {
 		logger.Error("Failed to create message", err)
-		websocket_connection.WriteJSON(map[string]interface{}{
+		websocketConnection.WriteJSON(map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to create message in database",
 		})
@@ -109,15 +117,15 @@ func handleCreateMessage(message WebSocketMessage, sender *db_model.User, websoc
 	}
 
 	// Confirm the message was created
-	websocket_connection.WriteJSON(map[string]interface{}{
+	websocketConnection.WriteJSON(map[string]interface{}{
 		"status":     "success",
 		"message":    "Message created",
-		"message_id": new_message.ID,
+		"message_id": newMessage.ID,
 	})
 
 	// Fill in the message details
 	message.SenderID = sender.ID
-	message.MessageID = new_message.ID
+	message.MessageID = newMessage.ID
 	message.SenderSubscriberTier = sender.Subscriber_Tier
 	message.SendTime = time.Now().Format(time.RFC3339)
 	message.Action = "create"
@@ -126,12 +134,12 @@ func handleCreateMessage(message WebSocketMessage, sender *db_model.User, websoc
 	broadcast <- message
 }
 
-func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websocket_connection *websocket.Conn) {
+func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websocketConnection *websocket.Conn) {
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
 		logger.Error("Failed to open database connection", err)
-		websocket_connection.WriteJSON(map[string]interface{}{
+		websocketConnection.WriteJSON(map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to open database connection",
 		})
@@ -140,10 +148,10 @@ func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websoc
 	defer db_model.CloseConnection(db)
 
 	// Retrieve the message
-	message_to_delete, err := db_model.GetMessageByID(db, message.MessageID)
+	messageToDelete, err := db_model.GetMessageByID(db, message.MessageID)
 	if err != nil {
 		logger.Error("Failed to retrieve message", err)
-		websocket_connection.WriteJSON(map[string]interface{}{
+		websocketConnection.WriteJSON(map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to retrieve message from database",
 		})
@@ -151,9 +159,9 @@ func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websoc
 	}
 
 	// Check if the user is the sender of the message OR an admin
-	if message_to_delete.Sender.ID != sender.ID && sender.Admin {
+	if messageToDelete.Sender.ID != sender.ID && !sender.Admin {
 		logger.Error("User is not the sender of the message or an admin")
-		websocket_connection.WriteJSON(map[string]interface{}{
+		websocketConnection.WriteJSON(map[string]interface{}{
 			"status":  "error",
 			"message": "User is not the sender of the message or an admin",
 		})
@@ -161,10 +169,9 @@ func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websoc
 	}
 
 	// Delete the message
-	err = message_to_delete.DeleteMessage(db)
-	if err != nil {
+	if err := messageToDelete.DeleteMessage(db); err != nil {
 		logger.Error("Failed to delete message", err)
-		websocket_connection.WriteJSON(map[string]interface{}{
+		websocketConnection.WriteJSON(map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to delete message from database",
 		})
@@ -172,7 +179,7 @@ func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websoc
 	}
 
 	// Confirm the message was deleted
-	websocket_connection.WriteJSON(map[string]interface{}{
+	websocketConnection.WriteJSON(map[string]interface{}{
 		"status":  "success",
 		"message": "Message deleted",
 	})
@@ -180,4 +187,17 @@ func handleDeleteMessage(message WebSocketMessage, sender *db_model.User, websoc
 	// Broadcast the message
 	message.Action = "delete"
 	broadcast <- message
+}
+
+func handleBroadcast() {
+	for {
+		message := <-broadcast
+		for client := range clients {
+			if err := client.WriteJSON(message); err != nil {
+				logger.Error("Failed to send message to client", err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
+	}
 }

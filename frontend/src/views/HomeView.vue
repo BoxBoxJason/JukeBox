@@ -10,6 +10,7 @@ import { defineComponent, ref } from 'vue'
 import SignIn from '../components/SignInWidget.vue'
 import Register from '../components/RegisterWidget.vue'
 import IconSendButton from '../components/icons/Icon_send_button.vue'
+import ChatWidget from '../components/ChatWidget.vue'
 
 const text = ref<string>("")
 
@@ -17,7 +18,8 @@ export default defineComponent({
   components: {
     SignIn,
     Register,
-    IconSendButton
+    IconSendButton,
+    ChatWidget,
   },
   setup() {
     const isSignInVisible = ref<boolean>(false) // Typage de isSignInVisible en booléen
@@ -77,6 +79,8 @@ export default defineComponent({
     </div>
   </div>
 
+  <ChatWidget />
+  
   <!-- Barre chat -->
   <div class="left-bar">
       <p class="title">Jukebox</p>
