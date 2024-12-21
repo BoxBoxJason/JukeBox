@@ -1,12 +1,14 @@
-let socket = null;
+let socket: WebSocket | null = null;
+let onMessageCallback: Function | null = null;
 
-export function connectWebSocket(url, onMessageCallback) {
+export function connectWebSocket(url: string, messageCallback: Function): void {
   socket = new WebSocket(url);
+  onMessageCallback = messageCallback;
 
   socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
     if (onMessageCallback) {
-      onMessageCallback(message);
+      onMessageCallback(message); // Appelle le callback pour mettre à jour l'interface
     }
   };
 
@@ -15,7 +17,7 @@ export function connectWebSocket(url, onMessageCallback) {
   socket.onerror = (error) => console.error("WebSocket error:", error);
 }
 
-export function sendMessage(message) {
+export function sendMessage(message: any): void {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(message));
   } else {
@@ -23,7 +25,7 @@ export function sendMessage(message) {
   }
 }
 
-export function disconnectWebSocket() {
+export function disconnectWebSocket(): void {
   if (socket) {
     socket.close();
     socket = null;
