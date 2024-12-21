@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/boxboxjason/jukebox/internal/api"
-	"github.com/boxboxjason/jukebox/internal/websocket"
 	"github.com/boxboxjason/jukebox/internal/constants"
 	"github.com/boxboxjason/jukebox/internal/jobs"
+	"github.com/boxboxjason/jukebox/internal/middlewares"
+	chatwebsocket "github.com/boxboxjason/jukebox/internal/websocket"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -26,7 +27,7 @@ func main() {
 	main_router.Use(middleware.Logger)    // Log every HTTP request
 	main_router.Use(middleware.Recoverer) // Recover from panics
 	main_router.Use(middleware.RealIP)    // Get the real IP address of the client
-	main_router.Use(middleware.RequestID) // Generate a request ID for every request (might delete that later)
+	main_router.Use(middleware.RequestID) // Generate a request ID for every request
 
 	// Serve the frontend
 	frontend_dir := path.Join(".", "frontend", "dist")
@@ -48,8 +49,13 @@ func main() {
 	main_router.Mount("/api", api_router)
 	logger.Info("Serving API at /api")
 
-	// Serve WebSocket
-	main_router.HandleFunc("/ws/chat", chatwebsocket.ChatWebSocket)
+	// Application du middleware d'authentification sur la route /ws/chat
+	// Cela garantira que l'utilisateur sera présent dans le contexte
+	// lors de l'établissement de la connexion WebSocket.
+	main_router.Group(func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware)
+		r.HandleFunc("/ws/chat", chatwebsocket.ChatWebSocket)
+	})
 	logger.Info("Serving WebSocket chat at /ws/chat")
 
 	// Start jobs

@@ -57,7 +57,7 @@ export default defineComponent({
           // Succès : Traitez les données de la réponse ou redirigez
           const data = await response.json()
           errorMessage.value = "Connexion réussie !";
-          emit('success')
+          emit('success', formData.username_or_email)
           emit('close')
         } else {
           errorMessage.value = await response.text()
