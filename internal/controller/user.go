@@ -18,7 +18,7 @@ import (
 var (
 	VALID_USERNAME = regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`)
 	VALID_EMAIL    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	VALID_PASSWORD = regexp.MustCompile(`^.{6,32}$`)
+	VALID_PASSWORD = regexp.MustCompile(`^.{6,99}$`)
 )
 
 // ================= CRUD Operations =================
@@ -41,7 +41,7 @@ func CreateUser(db *gorm.DB, username string, email string, password string) (*d
 		invalid_fields = append(invalid_fields, "email")
 	}
 	if !valid_password {
-		invalid_fields = append(invalid_fields, "password")
+		invalid_fields = append(invalid_fields, "password is too short")
 	}
 	if len(invalid_fields) > 0 {
 		return &db_model.User{}, httputils.NewBadRequestError("Invalid fields: " + strings.Join(invalid_fields, ", "))
