@@ -2,7 +2,11 @@ let socket: WebSocket | null = null;
 let onMessageCallback: Function | null = null;
 
 export function connectWebSocket(url: string, messageCallback: Function): void {
-  socket = new WebSocket(url);
+  const token = "Mjo5V8xQW3xes6I2DnItWObxlpnh4uQIU0xWGiDNCb92nFJoo7q6NDya2x/ZRT1U1";
+  const safeToken = encodeURIComponent(token);
+
+  socket = new WebSocket(url+'?token='+safeToken);
+
   onMessageCallback = messageCallback;
 
   socket.onmessage = (event) => {

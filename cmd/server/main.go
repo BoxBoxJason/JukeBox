@@ -54,9 +54,9 @@ func main() {
 	// lors de l'établissement de la connexion WebSocket.
 	main_router.Group(func(r chi.Router) {
 		r.Use(middlewares.AuthMiddleware)
-		r.HandleFunc("/ws/chat", chatwebsocket.ChatWebSocket)
+		r.HandleFunc("/wss/chat", chatwebsocket.ChatWebSocket)
 	})
-	logger.Info("Serving WebSocket chat at /ws/chat")
+	logger.Info("Serving WebSocket chat at /wss/chat")
 
 	// Start jobs
 	jobs.SetupJobs()

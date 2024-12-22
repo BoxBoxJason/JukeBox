@@ -84,6 +84,7 @@ func ChatWebSocket(w http.ResponseWriter, r *http.Request) {
 		httputils.SendErrorToClient(w, httputils.NewUnauthorizedError("user not found"))
 		return
 	}
+	logger.Info("Using test user:", user)
 
 	websocketConnection, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

@@ -23,7 +23,7 @@ export default defineComponent({
     const messages = ref<{ username: string; text: string; date: string }[]>([])
     const newMessage = ref<string>("")
     const username = ref<string>("")
-    const socketUrl = 'wss://localhost:3000/ws/chat'; // Utiliser wss:// pour WebSocket sécurisé
+    const socketUrl = 'wss://localhost:3000/wss/chat'; // Utiliser wss:// pour WebSocket sécurisé
 
     // Connexion WebSocket et gestion des messages
     const handleIncomingMessage = (message: any) => {
