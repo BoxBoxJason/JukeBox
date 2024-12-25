@@ -56,9 +56,16 @@ export default defineComponent({
         if (response.ok) {
           // Succès : Traitez les données de la réponse ou redirigez
           const data = await response.json()
-          errorMessage.value = "Connexion réussie !";
-          emit('success', formData.username_or_email)
-          emit('close')
+          if (data.access_token) {
+            // Stocke le token dans le localStorage
+            localStorage.setItem('authToken', data.access_token)
+
+            // Émet l'événement 'success' avec le username et le token
+            emit('success', { username: formData.username_or_email, token: data.access_token })
+            emit('close')
+          } else {
+            errorMessage.value = "Token manquant dans la réponse."
+          }
         } else {
           errorMessage.value = await response.text()
         }

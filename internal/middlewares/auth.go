@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -19,13 +18,11 @@ import (
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Retrieve the user ID and access token from the request
-		logger.Info("hello")
 		user_id, access_token, err := getUserIDAndAccessToken(r)
 		if err != nil {
 			httputils.SendErrorToClient(w, err)
 			return
 		}
-		logger.Info("step_passé")
 		// Open a connection to the database
 		db, err := db_model.OpenConnection()
 		if err != nil {
@@ -123,13 +120,9 @@ func AdminAuthMiddleware(next http.Handler) http.Handler {
 func getUserIDAndAccessToken(r *http.Request) (int, string, error) {
 	// Lire le token depuis les query parameters
 	token := r.URL.Query().Get("token")
-	decodedToken, err := url.QueryUnescape(token)
-	logger.Info(decodedToken)
-	if err != nil {
-		return -1, "", fmt.Errorf("failed to unescape token: %w", err)
-	}
-	if decodedToken != "" {
-		return DecodeIdentityBearerToUserAndToken(decodedToken)
+
+	if token != "" {
+		return DecodeIdentityBearerToUserAndToken(token)
 	}
 
 	identity_bearer, err := readAccessCookie(r)
@@ -181,17 +174,17 @@ func readRefreshCookie(r *http.Request) (string, error) {
 
 func DecodeIdentityBearerToUserAndToken(identity_bearer string) (int, string, error) {
 	// Decode the base64 encoded identity bearer
-	decoded_bearer, err := base64.StdEncoding.DecodeString(identity_bearer)
+	decoded_bearer, err := base64.RawStdEncoding.DecodeString(identity_bearer)
 
 	if err != nil {
 		return -1, "", httputils.NewUnauthorizedError("Invalid identity bearer")
 	}
-	logger.Info("second step")
+
 	parts := strings.Split(string(decoded_bearer), ":")
 	if len(parts) != 2 {
 		return -1, "", httputils.NewUnauthorizedError("Invalid identity format")
 	}
-	logger.Info("second step2")
+
 	user_id, err := strconv.Atoi(parts[0])
 	logger.Info(user_id, err)
 	if err != nil || user_id < 0 {
