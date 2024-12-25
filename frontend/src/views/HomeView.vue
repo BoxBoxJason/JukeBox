@@ -34,14 +34,14 @@ export default defineComponent({
     };
 
     // Connexion WebSocket après l'authentification
-    const toggleConnection = (user: string) => {
-      if (!isConnected.value && user) {
+    const toggleConnection = ({ username: user, token }: { username: string, token: string }) => {
+      if (!isConnected.value && token) {
         username.value = user;
         isConnected.value = true;
         errorMessage.value = null;
 
-        // Connecte-toi au WebSocket uniquement après la connexion de l'utilisateur
-        connectWebSocket(socketUrl, handleIncomingMessage);
+        // Connecte-toi au WebSocket avec le token
+        connectWebSocket(socketUrl, token, handleIncomingMessage);
       } else {
         username.value = "";
         isConnected.value = false;
@@ -49,6 +49,9 @@ export default defineComponent({
 
         // Déconnecte le WebSocket si l'utilisateur se déconnecte
         disconnectWebSocket();
+
+        // Supprime le token du localStorage
+        localStorage.removeItem('authToken');
       }
     };
 
@@ -61,7 +64,7 @@ export default defineComponent({
         });
         if (response.ok) {
           errorMessage.value = null;
-          toggleConnection(""); // Déconnexion de WebSocket ici aussi
+          toggleConnection({ username: "", token: "" }); // Déconnexion de WebSocket ici aussi
         } else {
           errorMessage.value = 'Erreur lors de la déconnexion : ' + await response.text();
         }
