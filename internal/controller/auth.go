@@ -9,32 +9,32 @@ import (
 
 // LoginUserFromPassword logs in a user by checking the validity of the input fields
 // And the correctness of the username and password
-func LoginUserFromPassword(username_or_email string, password string) (string, string, error) {
+func LoginUserFromPassword(username_or_email string, password string) (string, string, string, error) {
 	// Open db connection
 	db, err := db_model.OpenConnection()
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	defer db_model.CloseConnection(db)
 
 	// Retrieve the user (if it exists)
 	user, err := db_model.GetUserByUsernameOREmail(db, username_or_email)
 	if err != nil {
-		return "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
+		return "", "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
 	}
 
 	// Check if the password matches
 	if !user.CheckPasswordMatches(password) {
-		return "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
+		return "", "", "", httputils.NewUnauthorizedError("Invalid credentials combination")
 	}
 
 	// Generate the user's auth token
 	access_token, refresh_token, err := GenerateUserAuthTokens(db, user)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	return access_token, refresh_token, nil
+	return user.Username, access_token, refresh_token, nil
 }
 
 // LoginFromToken logs in a user by checking the validity of the token

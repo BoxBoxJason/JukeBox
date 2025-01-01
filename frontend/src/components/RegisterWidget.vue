@@ -53,6 +53,7 @@ export default defineComponent({
         if (response.ok) {
           // Succès : Traitez les données de la réponse ou redirigez
           const data = await response.json()
+          console.log(formData, data)
           errorMessage.value = 'Compte correctement crée!'
           emit('success')
           emit('close')
