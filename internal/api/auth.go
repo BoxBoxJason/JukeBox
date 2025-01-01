@@ -46,14 +46,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	access_token, refresh_token, err := db_controller.LoginUserFromPassword(username_or_email, password)
+	user, access_token, refresh_token, err := db_controller.LoginUserFromPassword(username_or_email, password)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
 	setAuthCookies(w, access_token, refresh_token)
-	httputils.SendJSONResponse(w, map[string]string{"access_token": access_token, "refresh_token": refresh_token})
+	httputils.SendJSONResponse(w, map[string]string{"Username": user, "access_token": access_token, "refresh_token": refresh_token})
 }
 
 // Logout logs out a user by deleting the access token
