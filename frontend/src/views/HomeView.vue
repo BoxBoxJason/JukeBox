@@ -13,16 +13,26 @@ export default defineComponent({
     IconSendButton,
     IconLogout
   },
+
   setup() {
-    const isSignInVisible = ref<boolean>(false)
-    const isRegisterVisible = ref<boolean>(false)
+    const isSignInVisible = ref(false)
+    const isRegisterVisible = ref(false)
     const isConnected = ref(false)
     const errorMessage = ref<string | null>(null)
     const isLogout = ref(false)
     const messages = ref<{ username: string; text: string; date: string }[]>([])
     const newMessage = ref<string>("")
     const username = ref<string>("")
+    const signInMessage = ref("");
     const socketUrl = 'wss://localhost:3000/wss/chat'; // Utiliser wss:// pour WebSocket sécurisé
+
+
+    // Redirection après inscription
+    const handleRegisterSuccess = (message: string) => {
+      signInMessage.value = message;
+      isRegisterVisible.value = false;
+      isSignInVisible.value = true;
+    };
 
     // Connexion WebSocket et gestion des messages
     const handleIncomingMessage = (message: any) => {
@@ -113,15 +123,17 @@ export default defineComponent({
       isSignInVisible,
       isRegisterVisible,
       isConnected,
-      toggleSignIn: () => isSignInVisible.value = !isSignInVisible.value,
-      toggleRegister: () => isRegisterVisible.value = !isRegisterVisible.value,
+      toggleSignIn: () => (isSignInVisible.value = !isSignInVisible.value),
+      toggleRegister: () => (isRegisterVisible.value = !isRegisterVisible.value),
       toggleConnection,
       logout,
       messages,
       newMessage,
       username,
       addMessage,
-      errorMessage
+      errorMessage,
+      signInMessage,
+      handleRegisterSuccess
     }
   }
 });
@@ -176,9 +188,9 @@ export default defineComponent({
       </ul>
     </div>
   </div>
-
-  <SignIn v-if="isSignInVisible" @close="toggleSignIn" @success="toggleConnection"/>
-  <Register v-if="isRegisterVisible" @close="toggleRegister" @success="toggleConnection"/>
+  <Register v-if="isRegisterVisible" @close="toggleRegister" @success="handleRegisterSuccess"/>
+  <SignIn v-if="isSignInVisible" :message="signInMessage"  @close="toggleSignIn" @success="toggleConnection" />
+  
 </template>
 
 <style scoped>
@@ -362,6 +374,10 @@ export default defineComponent({
 }
 
 .messages-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   position: relative;
   height: 85%; 
   width: 100%; 
@@ -371,6 +387,14 @@ export default defineComponent({
   padding: 10px; 
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1); 
   border-radius: 8px; 
+}
+
+.message-container p {
+  margin: 0;
+  padding: 5px 0;
+  font-family: 'Roboto', sans-serif; 
+  font-size: 16px; 
+  color: var(--color-text); 
 }
 
 .message-item {

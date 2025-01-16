@@ -54,8 +54,7 @@ export default defineComponent({
           // Succès : Traitez les données de la réponse ou redirigez
           const data = await response.json()
           console.log(formData, data)
-          errorMessage.value = 'Compte correctement crée!'
-          emit('success')
+          emit('success', 'Compte correctement crée, vous pouvez vous connecter.');
           emit('close')
         } else {
           errorMessage.value = await response.text()
@@ -251,4 +250,5 @@ export default defineComponent({
   background-color: transparent;
   border: none;
 }
+
 </style>

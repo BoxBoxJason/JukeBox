@@ -14,6 +14,13 @@ export default defineComponent({
     IconPassword
   },
 
+  props: {
+  message: {
+    type: String,
+    default: null,
+  },
+},
+
   emits: ['close','success'],
 
   setup(_, { emit }) {
@@ -105,7 +112,8 @@ export default defineComponent({
         <IconQuit />
       </button>
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-      <h1 class="title">Welcome back on JukeBox !</h1>
+      <div v-if="message" class="alert alert-success"> {{ message }}</div>
+      <h1 class="title">Welcome Back on Jukebox!</h1>
       <h2 class="username-text">Username</h2>
       <input
         id="email"
