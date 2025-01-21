@@ -14,6 +14,7 @@ import (
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 func main() {
@@ -24,10 +25,17 @@ func main() {
 	main_router := chi.NewRouter()
 
 	// Setup middlewares
-	main_router.Use(middleware.Logger)    // Log every HTTP request
-	main_router.Use(middleware.Recoverer) // Recover from panics
-	main_router.Use(middleware.RealIP)    // Get the real IP address of the client
-	main_router.Use(middleware.RequestID) // Generate a request ID for every request
+	main_router.Use(middleware.Logger)         // Log every HTTP request
+	main_router.Use(middleware.Recoverer)      // Recover from panics
+	main_router.Use(middleware.RealIP)         // Get the real IP address of the client
+	main_router.Use(middleware.RequestID)      // Generate a request ID for every request
+	main_router.Use(cors.Handler(cors.Options{ // Setup CORS
+		AllowedOrigins:   []string{"http://localhost:3000", "https://localhost:3000"}, // Allow only the frontend to access the API (for now dev URL)
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+	}))
 
 	// Serve the frontend
 	frontend_dir := path.Join(".", "frontend", "dist")
