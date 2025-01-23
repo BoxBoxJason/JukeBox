@@ -3,6 +3,7 @@ package httputils
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -404,7 +405,7 @@ func RetrievePostFormIntListValueParameter(r *http.Request, parameter_name strin
 func ReadCookie(r *http.Request, cookie_name string) (string, error) {
 	cookie, err := r.Cookie(cookie_name)
 	if err != nil {
-		return "", NewUnauthorizedError("Missing cookie: " + cookie_name)
+		return "", errors.New("missing cookie: " + cookie_name)
 	}
 	return cookie.Value, nil
 }
