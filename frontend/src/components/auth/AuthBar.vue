@@ -84,8 +84,8 @@ export default defineComponent({
   <nav class="w-full p-4">
     <div class="w-full flex justify-between items-center" v-if="username">
       <span>{{ username }}</span>
-      <button @click="logout">
-        <LogoutIcon class="w-6 h-6" />
+      <button @click="logout" class="w-6 h-6">
+        <LogoutIcon />
       </button>
     </div>
     <div v-else class="w-full flex justify-end items-center gap-2">
