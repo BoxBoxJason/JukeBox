@@ -35,25 +35,79 @@ func SetupAuthRoutes(r chi.Router) {
 
 // Login logs in a user by checking the validity of the input fields
 func Login(w http.ResponseWriter, r *http.Request) {
-	username_or_email, err := httputils.RetrievePostFormStringParameter(r, "username_or_email", false)
+
+	auth_from_token, err := LoginFromToken(w, r)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
+	} else if auth_from_token {
+		return
+	}
+
+	_, err = LoginFromPassword(w, r)
+	if err != nil {
+		httputils.SendErrorToClient(w, err)
+	}
+}
+
+func LoginFromToken(w http.ResponseWriter, r *http.Request) (bool, error) {
+	success := false
+	// Attempt to retrieve the access token from the request cookies
+	identity_bearer, err := httputils.ReadCookie(r, constants.ACCESS_TOKEN_COOKIE_NAME)
+	if err != nil {
+		identity_bearer, err = httputils.RetrieveAuthorizationToken(r, constants.AUTH_SCHEME+" ")
+	}
+
+	if identity_bearer != "" {
+		// Attempt to login from the token
+		user_id, access_token, err := middlewares.DecodeIdentityBearerToUserAndToken(identity_bearer)
+		if err != nil {
+			return success, err
+		} else {
+			user_id, username, access_token, refresh_token, err := db_controller.LoginFromToken(user_id, access_token)
+			if err != nil {
+				httputils.SendErrorToClient(w, err)
+				return success, err
+			} else {
+				setAuthCookies(w, access_token, "")
+				httputils.SendJSONResponse(w, map[string]interface{}{
+					"username":      username,
+					"user_id":       user_id,
+					"access_token":  access_token,
+					"refresh_token": refresh_token,
+				})
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func LoginFromPassword(w http.ResponseWriter, r *http.Request) (bool, error) {
+	// Cannot login from token, login from password
+	username_or_email, err := httputils.RetrievePostFormStringParameter(r, "username_or_email", false)
+	if err != nil {
+		return false, err
 	}
 	password, err := httputils.RetrievePostFormStringParameter(r, "password", false)
 	if err != nil {
-		httputils.SendErrorToClient(w, err)
-		return
+		return false, err
 	}
 
-	user, access_token, refresh_token, err := db_controller.LoginUserFromPassword(username_or_email, password)
+	user_id, username, access_token, refresh_token, err := db_controller.LoginUserFromPassword(username_or_email, password)
 	if err != nil {
-		httputils.SendErrorToClient(w, err)
-		return
+		return false, err
 	}
 
 	setAuthCookies(w, access_token, refresh_token)
-	httputils.SendJSONResponse(w, map[string]string{"Username": user, "access_token": access_token, "refresh_token": refresh_token})
+	httputils.SendJSONResponse(w, map[string]interface{}{
+		"username":      username,
+		"user_id":       user_id,
+		"access_token":  access_token,
+		"refresh_token": refresh_token,
+	})
+
+	return true, nil
 }
 
 // Logout logs out a user by deleting the access token
@@ -85,14 +139,19 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	access_token, new_refresh_token, err := db_controller.RefreshTokens(identity_bearer)
+	user_id, username, access_token, new_refresh_token, err := db_controller.RefreshTokens(identity_bearer)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
 	setAuthCookies(w, access_token, new_refresh_token)
-	httputils.SendJSONResponse(w, map[string]string{"access_token": access_token, "refresh_token": new_refresh_token})
+	httputils.SendJSONResponse(w, map[string]interface{}{
+		"access_token":  access_token,
+		"refresh_token": new_refresh_token,
+		"username":      username,
+		"user_id":       user_id,
+	})
 }
 
 func setAuthCookies(w http.ResponseWriter, access_token string, refresh_token string) {
