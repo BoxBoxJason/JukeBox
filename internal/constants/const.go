@@ -39,18 +39,18 @@ const (
 	// Access token Type constant
 	ACCESS_TOKEN = "access"
 	// Access token cookie name
-	ACCESS_TOKEN_COOKIE_NAME = "access_token"
+	ACCESS_TOKEN_COOKIE_NAME = "accessToken"
 	// Access token cookie path
 	ACCESS_TOKEN_COOKIE_PATH = "/api"
 	// Access token expiration in hours
 	ACCESS_TOKEN_EXPIRATION = 4
 	// Access token context key (used to store/retrieve the token from the context)
-	ACCESS_TOKEN_CONTEXT_KEY contextKey = "access_token"
+	ACCESS_TOKEN_CONTEXT_KEY contextKey = "accessToken"
 	// Refresh token Type constant
 	// ==================== REFRESH TOKEN ====================
 	REFRESH_TOKEN = "refresh"
 	// Refresh token cookie name
-	REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
+	REFRESH_TOKEN_COOKIE_NAME = "refreshToken"
 	// Refresh token cookie path
 	REFRESH_TOKEN_COOKIE_PATH = "/api/auth"
 	// Refresh token expiration in hours
@@ -64,6 +64,7 @@ const (
 	// ==================== REQUESTS PARAMETERS ====================
 	ID_PARAMETER               = "id"
 	USERNAME_PARAMETER         = "username"
+	USER_ID_PARAMETER          = "user_id"
 	PARTIAL_USERNAME_PARAMETER = "partial_username"
 	EMAIL_PARAMETER            = "email"
 	PASSWORD_PARAMETER         = "password"
