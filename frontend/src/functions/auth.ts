@@ -1,6 +1,4 @@
-import Cookies from "js-cookie"
 import { LOCAL_STORAGE_KEYS } from "@/constants/storage";
-import { COOKIE_KEYS } from "@/constants/storage"
 
 /**
  * Checks if the user is already logged in,
@@ -12,17 +10,18 @@ import { COOKIE_KEYS } from "@/constants/storage"
 export async function autoLogin(): Promise<boolean> {
   const localStorageUserId: string | null = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID);
   const localStorageUsername: string | null = localStorage.getItem(LOCAL_STORAGE_KEYS.USERNAME);
-  const accessToken: string | undefined = Cookies.get(COOKIE_KEYS.ACCESS_TOKEN);
-  const refreshToken: string | undefined = Cookies.get(COOKIE_KEYS.REFRESH_TOKEN);
 
-  let authSuccess = localStorageUserId != null && localStorageUsername != null && accessToken != undefined && refreshToken != undefined;
+  let authSuccess = localStorageUserId != null && localStorageUsername != null;
 
   if (!authSuccess) {
-    if (accessToken != null) {
-      authSuccess = await loginFromAccessToken();
-    } else if (refreshToken != null) {
+    authSuccess = await loginFromAccessToken();
+    if (!authSuccess) {
       authSuccess = await loginFromRefreshToken();
     }
+  }
+
+  if (!authSuccess) {
+    clearIdentity();
   }
   return authSuccess;
 }
@@ -35,19 +34,18 @@ export async function autoLogin(): Promise<boolean> {
  */
 export async function loginFromRefreshToken(): Promise<boolean> {
   let loggedIn = false;
-  const refreshToken: string | undefined = Cookies.get(COOKIE_KEYS.REFRESH_TOKEN);
-  if (refreshToken != undefined && refreshToken.trim()) {
-    const response = await fetch("/api/auth/refresh", {
-      method: "POST",
-      credentials: "include",
-    });
 
-    if (response.ok) {
-      const data = await response.json();
-      setIdentity(data.user_id, data.username);
-      loggedIn = true;
-    }
+  const response = await fetch("/api/auth/refresh", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    setIdentity(data.user_id, data.username);
+    loggedIn = true;
   }
+
   return loggedIn;
 }
 
@@ -59,23 +57,18 @@ export async function loginFromRefreshToken(): Promise<boolean> {
  */
 export async function loginFromAccessToken(): Promise<boolean> {
   let loggedIn = false;
-  const accessToken: string | undefined = Cookies.get(COOKIE_KEYS.ACCESS_TOKEN);
-  if (accessToken != undefined) {
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
 
-    if (response.ok) {
-      const data = await response.json();
-      setIdentity(data.user_id, data.username);
-      loggedIn = true;
-    }
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    setIdentity(data.user_id, data.username);
+    loggedIn = true;
   }
+
   return loggedIn;
 }
 
@@ -90,6 +83,8 @@ export async function loginFromAccessToken(): Promise<boolean> {
 export function setIdentity(user_id: number, username: string) {
   localStorage.setItem(LOCAL_STORAGE_KEYS.USERNAME, username);
   localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ID, user_id.toString());
+  const event = new CustomEvent("localStorageChange");
+  window.dispatchEvent(event);
 }
 
 /**
@@ -119,20 +114,4 @@ export async function fullLogout(): Promise<boolean> {
 export function clearIdentity() {
   localStorage.removeItem(LOCAL_STORAGE_KEYS.USERNAME);
   localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_ID);
-  Cookies.remove(COOKIE_KEYS.REFRESH_TOKEN);
-  Cookies.remove(COOKIE_KEYS.ACCESS_TOKEN);
-}
-
-/**
- * Checks if the user is fully signed in.
- *
- * @returns {boolean} True if the user is fully signed in, false otherwise.
- */
-export function isUserFullySignedIn() {
-  const localStorageUserId: string | null = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID);
-  const localStorageUsername: string | null = localStorage.getItem(LOCAL_STORAGE_KEYS.USERNAME);
-  const accessToken: string | undefined = Cookies.get(COOKIE_KEYS.ACCESS_TOKEN);
-  const refreshToken: string | undefined = Cookies.get(COOKIE_KEYS.REFRESH_TOKEN);
-
-  return localStorageUserId != null && localStorageUsername != null && accessToken != undefined && refreshToken != undefined;
 }
