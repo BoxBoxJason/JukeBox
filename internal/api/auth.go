@@ -71,10 +71,10 @@ func LoginFromToken(w http.ResponseWriter, r *http.Request) (bool, error) {
 			} else {
 				setAuthCookies(w, access_token, "")
 				httputils.SendJSONResponse(w, map[string]interface{}{
-					"username":      username,
-					"user_id":       user_id,
-					"access_token":  access_token,
-					"refresh_token": refresh_token,
+					"username":                          username,
+					"user_id":                           user_id,
+					constants.ACCESS_TOKEN_COOKIE_NAME:  access_token,
+					constants.REFRESH_TOKEN_COOKIE_NAME: refresh_token,
 				})
 				return true, nil
 			}
@@ -101,10 +101,10 @@ func LoginFromPassword(w http.ResponseWriter, r *http.Request) (bool, error) {
 
 	setAuthCookies(w, access_token, refresh_token)
 	httputils.SendJSONResponse(w, map[string]interface{}{
-		"username":      username,
-		"user_id":       user_id,
-		"access_token":  access_token,
-		"refresh_token": refresh_token,
+		"username":                          username,
+		"user_id":                           user_id,
+		constants.ACCESS_TOKEN_COOKIE_NAME:  access_token,
+		constants.REFRESH_TOKEN_COOKIE_NAME: refresh_token,
 	})
 
 	return true, nil
@@ -147,10 +147,10 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 
 	setAuthCookies(w, access_token, new_refresh_token)
 	httputils.SendJSONResponse(w, map[string]interface{}{
-		"access_token":  access_token,
-		"refresh_token": new_refresh_token,
-		"username":      username,
-		"user_id":       user_id,
+		"username":                          username,
+		"user_id":                           user_id,
+		constants.ACCESS_TOKEN_COOKIE_NAME:  access_token,
+		constants.REFRESH_TOKEN_COOKIE_NAME: new_refresh_token,
 	})
 }
 
