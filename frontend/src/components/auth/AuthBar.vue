@@ -6,12 +6,17 @@ Displays the user's username and a logout button if the user is connected.
 -->
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed, onUnmounted } from 'vue';
+import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
+import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import { LOCAL_STORAGE_KEYS } from '@/constants/storage';
-import { isUserFullySignedIn, autoLogin, fullLogout } from '@/functions/auth';
+import { autoLogin, fullLogout } from '@/functions/auth';
 
 export default defineComponent({
   name: 'AuthBar',
+
+  components: {
+    LogoutIcon,
+  },
 
   emits: ['updateVisibility'],
 
@@ -24,10 +29,8 @@ export default defineComponent({
       userId.value = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID);
     };
 
-    const handleStorageEvent = (event: StorageEvent) => {
-      if (event.key === LOCAL_STORAGE_KEYS.USERNAME || event.key === LOCAL_STORAGE_KEYS.USER_ID) {
-        syncFromLocalStorage();
-      }
+    const handleStorageEvent = (event: CustomEvent) => {
+      syncFromLocalStorage();
     };
 
     // Load user data from localStorage on mount
@@ -36,24 +39,19 @@ export default defineComponent({
       syncFromLocalStorage();
 
       // If nothing was loaded, attempt to request auth from refresh token
-      if (!isUserFullySignedIn()) {
-        autoLogin().then((authSuccess) => {
-          if (authSuccess) {
-            username.value = localStorage.getItem(LOCAL_STORAGE_KEYS.USERNAME);
-            userId.value = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID);
-          }
-        })
-      }
-      window.addEventListener('storage', handleStorageEvent);
+      autoLogin().then((authSuccess) => {
+        if (authSuccess) {
+          username.value = localStorage.getItem(LOCAL_STORAGE_KEYS.USERNAME);
+          userId.value = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID);
+        }
+      });
+
+      window.addEventListener('localStorageChange', handleStorageEvent as unknown as EventListener);
     });
 
     onUnmounted(() => {
       // Cleanup listener
-      window.removeEventListener('storage', handleStorageEvent);
-    });
-
-    const isSignedIn = computed(() => {
-      return isUserFullySignedIn() && username.value !== null && userId.value !== null;
+      window.removeEventListener('localStorageChange', handleStorageEvent as unknown as EventListener);
     });
 
     const logout = async () => {
@@ -77,7 +75,6 @@ export default defineComponent({
       logout,
       showSignIn,
       showRegister,
-      isSignedIn,
     };
   },
 });
@@ -85,9 +82,11 @@ export default defineComponent({
 
 <template>
   <nav class="w-full p-4">
-    <div class="w-full flex justify-between items-center" v-if="isSignedIn">
+    <div class="w-full flex justify-between items-center" v-if="username">
       <span>{{ username }}</span>
-      <button @click="logout">Logout</button>
+      <button @click="logout">
+        <LogoutIcon class="w-6 h-6" />
+      </button>
     </div>
     <div v-else class="w-full flex justify-end items-center gap-2">
       <button class="auth-button" @click="showSignIn">Sign In</button>

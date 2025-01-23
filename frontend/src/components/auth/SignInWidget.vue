@@ -6,15 +6,16 @@ The component emits an event to the parent component when the user is successful
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
-import ArrowRigtIcon from '@/components/icons/ArrowRightIcon.vue';
+import ArrowRightIcon from '@/components/icons/ArrowRightIcon.vue';
 import ShowPasswordIcon from '@/components/icons/ShowPasswordIcon.vue';
 import HidePasswordIcon from '@/components/icons/HidePasswordIcon.vue';
+import { setIdentity } from '@/functions/auth';
 
 export default defineComponent({
   name: 'SignInWidget',
 
   components: {
-    ArrowRigtIcon,
+    ArrowRightIcon,
     ShowPasswordIcon,
     HidePasswordIcon,
   },
@@ -23,15 +24,56 @@ export default defineComponent({
 
   setup(_, { emit }) {
     const passwordVisible = ref(false);
+    const isSubmitting = ref(false);
 
     // Toggle password visibility
     const togglePasswordVisibility = () => {
       passwordVisible.value = !passwordVisible.value;
     };
 
+    const clearForm = () => {
+      // Clear form fields
+      let form = document.getElementById('signin-form') as HTMLFormElement;
+      form.reset();
+    };
+
+    // Handle form submission
+    const handleSubmit = async (event: Event) => {
+      event.preventDefault(); // Prevent default form submission behavior
+      isSubmitting.value = true;
+
+      const form = event.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify(Object.fromEntries(formData.entries())),
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          emit('loginSuccess', { success: false, message: data.error });
+        } else {
+          // Emit success event if login is successful
+          setIdentity(data.user_id, data.username);
+          emit('loginSuccess', { success: true });
+          clearForm();
+        }
+      } catch (error: any) {
+        emit('loginSuccess', { success: false, message: error.message });
+      } finally {
+        isSubmitting.value = false;
+      }
+    };
+
     return {
       passwordVisible,
       togglePasswordVisibility,
+      handleSubmit,
+      isSubmitting,
     };
   },
 });
@@ -39,7 +81,7 @@ export default defineComponent({
 
 <template>
   <div class="flex flex-col items-center justify-center h-full">
-    <form class="flex flex-col gap-2" action="/api/auth/login" method="POST">
+    <form id="signin-form" class="flex flex-col gap-2" @submit="handleSubmit">
       <div class="auth-input-container">
         <label for="username_or_email" class="auth-input-label">Username or Email</label>
         <input type="text" class="auth-input" placeholder="Enter your username or email" id="username_or_email"
@@ -58,9 +100,11 @@ export default defineComponent({
           </button>
         </div>
       </div>
-      <button type="submit" class="flex items-center justify-center w-64 p-2 bg-primary-500 text-white rounded-lg">
-        <ArrowRigtIcon class="w-6 h-6 mr-2" />
-        Sign In
+      <button type="submit" :disabled="isSubmitting"
+        class="flex items-center justify-center w-64 p-2 bg-primary-500 text-white rounded-lg">
+        <ArrowRightIcon class="w-6 h-6 mr-2" />
+        <span v-if="!isSubmitting">Sign In</span>
+        <span v-else>Submitting...</span>
       </button>
     </form>
   </div>
