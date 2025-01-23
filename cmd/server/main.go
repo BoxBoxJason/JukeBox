@@ -74,11 +74,6 @@ func main() {
 	logger.Info("Starting JukeBox server at https://localhost:3000")
 	err := http.ListenAndServeTLS(":3000", "secret/cert.pem", "secret/key.pem", main_router)
 	if err != nil {
-		logger.Critical("Unable to start the server using TLS: ", err)
-		logger.Info("Starting the server without TLS at http://localhost:3000")
-		err = http.ListenAndServe(":3000", main_router)
-		if err != nil {
-			logger.Fatal("Unable to start the server", err)
-		}
+		logger.Fatal("Unable to start the server using TLS: ", err)
 	}
 }

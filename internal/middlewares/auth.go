@@ -10,7 +10,6 @@ import (
 
 	"github.com/boxboxjason/jukebox/internal/constants"
 	db_model "github.com/boxboxjason/jukebox/internal/model"
-	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
 	"github.com/boxboxjason/jukebox/pkg/utils/timeutils"
 )
@@ -186,7 +185,6 @@ func DecodeIdentityBearerToUserAndToken(identity_bearer string) (int, string, er
 	}
 
 	user_id, err := strconv.Atoi(parts[0])
-	logger.Info(user_id, err)
 	if err != nil || user_id < 0 {
 		return -1, "", httputils.NewUnauthorizedError("Invalid user ID")
 	}

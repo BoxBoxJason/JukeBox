@@ -37,7 +37,7 @@ export default defineComponent({
     };
 
     const handleOutsideClick = (event: MouseEvent) => {
-      // Logic for handling outside click, if needed
+      // Logic for handling outside click, (should close the auth-swapper widget)
     };
 
     const showMessage = (payload: { success: boolean; message: string }) => {
@@ -90,9 +90,9 @@ export default defineComponent({
 
 <template>
   <div v-if="isVisible"
-    class="auth-swapper z-20 flex flex-col items-center px-12 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 rounded-lg shadow-lg">
-    <button class="absolute top-1 right-1" @click="closeWidget">
-      <CrossIcon class="h-6 w-6" />
+    class="auth-swapper z-20 flex flex-col items-center px-12 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 bg-slate-800 rounded-lg shadow-lg">
+    <button class="absolute top-1 right-1 text-slate-100 h-6 w-6" @click="closeWidget">
+      <CrossIcon />
     </button>
     <div class="flex gap-4 mb-4">
       <button class="px-4 py-2 rounded focus:outline-none" :class="{

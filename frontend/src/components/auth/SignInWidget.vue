@@ -93,7 +93,7 @@ export default defineComponent({
           <input :type="passwordVisible ? 'text' : 'password'" class="auth-input pr-10" placeholder="Password"
             id="password" name="password" required />
           <button type="button"
-            class="absolute right-2 top-2/4 transform -translate-y-2/4 text-gray-500 hover:text-primary-500 w-6 h-6"
+            class="absolute right-2 top-2/4 transform -translate-y-2/4 text-slate-100 hover:text-primary-500 w-6 h-6"
             @click="togglePasswordVisibility" aria-label="Toggle password visibility">
             <HidePasswordIcon v-if="passwordVisible" />
             <ShowPasswordIcon v-else />
@@ -102,7 +102,9 @@ export default defineComponent({
       </div>
       <button type="submit" :disabled="isSubmitting"
         class="flex items-center justify-center w-64 p-2 bg-primary-500 text-white rounded-lg">
-        <ArrowRightIcon class="w-6 h-6 mr-2" />
+        <div class="w-6 h-6 mr-2">
+          <ArrowRightIcon />
+        </div>
         <span v-if="!isSubmitting">Sign In</span>
         <span v-else>Submitting...</span>
       </button>
