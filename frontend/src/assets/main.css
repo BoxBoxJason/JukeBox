@@ -1,35 +1,25 @@
 @import './base.css';
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.auth-button {
+  @apply px-4 py-2 rounded-full border cursor-pointer;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+.auth-input {
+  @apply w-64 p-2 rounded-lg;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+.auth-input:focus {
+  @apply border-blue-500;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+.auth-input-container {
+  @apply flex flex-col items-center gap-1 my-2;
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+.auth-input-label {
+  @apply text-center text-sm;
 }
