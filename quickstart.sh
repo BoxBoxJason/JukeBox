@@ -6,6 +6,7 @@ JUKEBOX_BIN=${JUKEBOX_BIN_DIR}/jukebox
 
 cd ${JUKEBOX_FRONTEND_DIR} && \
 npm install && \
+rm -rf ${JUKEBOX_FRONTEND_DIR}/dist && \
 npm run build && \
 cd .. && \
 go mod tidy && \

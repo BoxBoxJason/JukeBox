@@ -1,438 +1,65 @@
+<!--
+Website landing page, handles the login and registration of users
+Displays the chat room and the music player. Allows users to communicate with each other
+Displays navigation / legal footer
+-->
+
 <script lang="ts">
-import { defineComponent, ref, onBeforeUnmount } from 'vue';
-import { connectWebSocket, sendMessage, disconnectWebSocket } from '../services/WebSocketService'; // Assurez-vous d'importer WebSocketService
-import SignIn from '../components/SignInWidget.vue'
-import Register from '../components/RegisterWidget.vue'
-import IconSendButton from '../components/icons/Icon_send_button.vue'
-import IconLogout from '../components/icons/Icon_logout.vue'
+import { defineComponent, ref } from 'vue';
+import SiteFooter from '@/components/common/SiteFooter.vue';
+import AuthBar from '@/components/auth/AuthBar.vue';
+import AuthSwapper from '@/components/auth/AuthSwapper.vue';
+import ChatWidget from '@/components/chat/ChatWidget.vue';
 
 export default defineComponent({
   components: {
-    SignIn,
-    Register,
-    IconSendButton,
-    ChatWidget,,
-    IconLogout
+    AuthBar,
+    AuthSwapper,
+    ChatWidget,
+    SiteFooter,
   },
 
   setup() {
-    const isSignInVisible = ref(false)
-    const isRegisterVisible = ref(false)
-    const isConnected = ref(false)
-    const errorMessage = ref<string | null>(null)
-    const isLogout = ref(false)
-    const messages = ref<{ username: string; text: string; date: string }[]>([])
-    const newMessage = ref<string>("")
-    const username = ref<string>("")
-    const signInMessage = ref("");
-    const socketUrl = 'wss://localhost:3000/wss/chat'; // Utiliser wss:// pour WebSocket sécurisé
+    const isAuthVisible = ref(false);
+    const currentForm = ref('signin');
 
-
-    // Redirection après inscription
-    const handleRegisterSuccess = (message: string) => {
-      signInMessage.value = message;
-      isRegisterVisible.value = false;
-      isSignInVisible.value = true;
-    };
-
-    // Connexion WebSocket et gestion des messages
-    const handleIncomingMessage = (message: any) => {
-      messages.value.push({
-        username: message.sender_name,
-        text: message.message,
-        date: new Date(message.send_time).toLocaleString(),
-      });
-    };
-
-    // Connexion WebSocket après l'authentification
-    const toggleConnection = ({ username: user, token }: { username: string, token: string }) => {
-      if (!isConnected.value && token) {
-        username.value = user;
-        isConnected.value = true;
-        errorMessage.value = null;
-
-        // Connecte-toi au WebSocket avec le token
-        connectWebSocket(socketUrl, token, handleIncomingMessage);
-      } else {
-        username.value = "";
-        isConnected.value = false;
-        errorMessage.value = null;
-
-        // Déconnecte le WebSocket si l'utilisateur se déconnecte
-        disconnectWebSocket();
-
-        // Supprime le token du localStorage
-        localStorage.removeItem('authToken');
+    const updateVisibility = ({ visible, form }: { visible: boolean; form?: string }) => {
+      if (visible !== undefined) {
+        isAuthVisible.value = visible;
+      }
+      if (form) {
+        currentForm.value = form;
       }
     };
-
-    const logout = async () => {
-      isLogout.value = true;
-      try {
-        const response = await fetch('https://localhost:3000/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (response.ok) {
-          errorMessage.value = null;
-          toggleConnection({ username: "", token: "" }); // Déconnexion de WebSocket ici aussi
-        } else {
-          errorMessage.value = 'Erreur lors de la déconnexion : ' + await response.text();
-        }
-      } catch (err) {
-        errorMessage.value = err instanceof TypeError && err.message.includes('Failed to fetch')
-          ? 'Impossible de se connecter au serveur.'
-          : (err as Error).message || 'Erreur réseau inattendue.';
-      } finally {
-        isLogout.value = false;
-      }
-    };
-
-    const addMessage = () => {
-      if (!isConnected.value) {
-        errorMessage.value = "Vous devez être connecté pour envoyer un message.";
-        return;
-      }
-
-      const trimmedMessage = newMessage.value.trim();
-      if (trimmedMessage === "") {
-        errorMessage.value = "Le message ne peut pas être vide.";
-        return;
-      }
-
-      const message = {
-        sender_name: username.value,
-        message: trimmedMessage,
-        action: 'create',
-        send_time: new Date().toISOString()
-      };
-
-      // Envoie le message via WebSocket
-      sendMessage(message);
-
-      // Réinitialiser le champ du message
-      newMessage.value = "";
-      errorMessage.value = null;
-    };
-
-    // Déconnexion proprement à la destruction du composant
-    onBeforeUnmount(() => {
-      disconnectWebSocket();
-    });
 
     return {
-      isSignInVisible,
-      isRegisterVisible,
-      isConnected,
-      toggleSignIn: () => (isSignInVisible.value = !isSignInVisible.value),
-      toggleRegister: () => (isRegisterVisible.value = !isRegisterVisible.value),
-      toggleConnection,
-      logout,
-      messages,
-      newMessage,
-      username,
-      addMessage,
-      errorMessage,
-      signInMessage,
-      handleRegisterSuccess
-    }
-  }
+      isAuthVisible,
+      currentForm,
+      updateVisibility,
+    };
+  },
 });
 </script>
 
-
 <template>
-  <div class="main-container">
-    <div class="message-input-container">
-      <input
-        class="input-prompt"
-        v-model="newMessage"
-        @keyup.enter="addMessage"
-        :placeholder="isConnected ? 'What do you want to play ?' : 'Connectez-vous pour envoyer un message'"
-      />
-      <button class="send-button" @click="addMessage">
-        <IconSendButton />
-      </button>
-    </div>
-    <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-screen z-10 overflow-y-auto"
+      style="max-width: 500px; min-width: 300px; width: 25vw">
+      <ChatWidget />
+    </aside>
 
-    <div v-if="!isConnected" class="login-container">
-
-    <!-- Barre de connexion si pas connecté -->
-    <div v-if="!isConnected" class="login-container">
-      <button class="sign-in" @click="toggleSignIn">Sign in</button>
-      <button class="register" @click="toggleRegister">Register</button>
-    </div>
-
-    <div v-if="isConnected" class="logged-container">
-      <button class="logout" @click="logout">
-        <IconLogout />
-      </button>
-      <h1 class="username"><b>{{ username }}</b></h1>
-    </div>
-
-    <div class="info-container">
-      <p class="copyright">©2024 JukeBox</p>
-      <p class="help"><u>Help ?</u></p>
-      <p class="about_us"><u>About us</u></p>
-    </div>
+    <!-- Main Content -->
+    <main class="flex flex-col w-3/4 min-h-screen" style="margin-left: calc(max(300px, min(25vw, 500px)))">
+      <!-- Auth Bar -->
+      <AuthBar @updateVisibility="updateVisibility" />
+      <!-- Auth Swapper -->
+      <AuthSwapper :isVisible="isAuthVisible" :currentForm="currentForm"
+        @updateVisibility="(payload) => updateVisibility(payload)" @updateForm="currentForm = $event" />
+      <!-- Push Footer to Bottom -->
+      <div class="flex-grow"></div>
+      <!-- Footer -->
+      <SiteFooter />
+    </main>
   </div>
-
-  <ChatWidget />
-
-  <!-- Barre chat -->
-  <div class="left-bar">
-    <div class="title-container">
-      <p class="title">Jukebox</p>
-    </div>
-
-    <div class="messages-container">
-      <ul class="messages-list">
-        <li v-for="(message, index) in messages" :key="index" class="message-item">
-          <p><strong>{{ message.username }}</strong> - {{ message.date }}</p>
-          <p>{{ message.text }}</p>
-        </li>
-      </ul>
-    </div>
-  </div>
-  <Register v-if="isRegisterVisible" @close="toggleRegister" @success="handleRegisterSuccess"/>
-  <SignIn v-if="isSignInVisible" :message="signInMessage"  @close="toggleSignIn" @success="toggleConnection" />
-
-
 </template>
-
-<style scoped>
-.main-container {
-  position: fixed;
-  top: 0;
-  left: 20%;
-  width: 80%;
-  height: 100%;
-  background-color: var(--color-background);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.message-input-container {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  width: 65%;
-  height: 6%;
-}
-
-.input-prompt {
-  width: 100%;
-  height: 100%;
-  border-radius: 100px;
-  border: 1px solid;
-  border-color: var(--color-background-mute);
-  background-color: var(--color-background-mute);
-  font-size: 16px;
-  color: var(--color-text);
-  padding-left: 3%;
-}
-
-.send-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  right:  2%;
-  height: 4vh;
-  width: 4vh;
-  color: var(--color-background);
-  border: none;
-  border-radius: 100%;
-  cursor: pointer;
-  background-color: var(--color-bouton-color);
-}
-
-.send-button svg {
-  width: 100%;
-  height: 100%;
-}
-
-.error-message {
-  color: red;
-  font-size: 14px;
-  margin-top: 5px;
-  text-align: center;
-}
-
-.info-container {
-  position: absolute;
-  font-family: 'Roboto';
-  font-size: 14px;
-  width: 100%;
-  height: 5%;
-  bottom: 0%;
-  left: 0%;
-}
-
-.copyright {
-  position: absolute;
-  left: 2%;
-}
-
-.help {
-  position: absolute;
-  right: 2%;
-}
-
-.about_us {
-  position: absolute;
-  right: 9%;
-}
-
-.login-container {
-  position: absolute;
-  width: 20%;
-  height: 5%;
-  top: 2%;
-  right: 2%;
-}
-
-.sign-in {
-  position: absolute;
-  width: 46%;
-  height: 100%;
-  left: 0%;
-  border-radius: 100px;
-  background-color: var(--color-login);
-  font-family: 'Roboto';
-  font-size: 16px;
-  color: var(--color-text);
-  border: 1px solid;
-  cursor: pointer;
-  border-color: black;
-}
-
-.register {
-  position: absolute;
-  width: 46%;
-  height: 100%;
-  right: 0%;
-  border-radius: 100px;
-  background-color: var(--color-register);
-  font-family: 'Roboto';
-  font-size: 16px;
-  color: var(--color-text);
-  border: 1px solid;
-  cursor: pointer;
-  border-color: black;
-}
-
-.logged-container {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 5%;
-  top: 2%;
-}
-
-.logout {
-  position: absolute;
-  height: 100%;
-  width: 3%;
-  right: 1%;
-  background-color: var(--color-background);
-  border: none;
-  cursor: pointer;
-}
-
-.username {
-  position: absolute;
-  left: 2%;
-  font-family: 'Roboto';
-  font-size: 16px;
-  color: var(--color-text);
-}
-
-.left-bar {
-  position: fixed;
-  display: flex;
-  align-items: center;
-  top: 0%;
-  left: 0%;
-  width: 20%;
-  height: 100%;
-  background-color: var(--color-background-soft);
-}
-
-.title-container {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  top: 2%;
-  height: 5%;
-  width: 100%;
-}
-
-.title {
-  position: absolute;
-  padding-bottom: 1.5%;
-  font-size: 26px;
-  font-family: 'Titan one';
-  color: var(--color-heading);
-}
-
-.messages-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  height: 85%;
-  width: 100%;
-  margin-top: 5%;
-  overflow-y: auto;
-  background-color: var(--color-background-mute);
-  padding: 10px;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-}
-
-.message-container p {
-  margin: 0;
-  padding: 5px 0;
-  font-family: 'Roboto', sans-serif;
-  font-size: 16px;
-  color: var(--color-text);
-}
-
-.message-item {
-  display: flex;
-  flex-direction: column;
-  padding: 8px;
-  margin-bottom: 10px;
-  background-color: var(--color-background-soft);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  color: var(--color-text);
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  word-wrap: break-word;
-}
-
-.messages-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-  background-color: var(--color-background);
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background-color: var(--color-background-mute);
-  border-radius: 4px;
-}
-
-.messages-container::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-background-soft);
-}
-</style>
