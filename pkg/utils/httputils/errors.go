@@ -1,6 +1,9 @@
 package httputils
 
-import "net/http"
+import (
+	"encoding/json"
+	"net/http"
+)
 
 type HTTPError interface {
 	Error() string
@@ -91,11 +94,28 @@ func NewServiceUnavailableError(message string) *ServiceUnavailableError {
 func (e *ServiceUnavailableError) Error() string   { return e.Message }
 func (e *ServiceUnavailableError) StatusCode() int { return http.StatusServiceUnavailable }
 
-// SendErrorToClient sends an error to the client
+// SendErrorToClient sends an error response to the client in JSON format
 func SendErrorToClient(w http.ResponseWriter, err error) {
-	if http_err, ok := err.(HTTPError); ok {
-		http.Error(w, http_err.Error(), http_err.StatusCode())
+	w.Header().Set("Content-Type", "application/json")
+	var statusCode int
+	var errorMessage string
+
+	if httpErr, ok := err.(HTTPError); ok {
+		statusCode = httpErr.StatusCode()
+		errorMessage = httpErr.Error()
 	} else {
-		http.Error(w, "unexpected error, the issue was logged", http.StatusInternalServerError)
+		statusCode = http.StatusInternalServerError
+		errorMessage = "unexpected error, the issue was logged"
+	}
+
+	w.WriteHeader(statusCode)
+
+	response := map[string]string{
+		"error": errorMessage,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		// If JSON encoding fails, log the issue and fall back to a generic response
+		http.Error(w, "failed to encode error message", http.StatusInternalServerError)
 	}
 }

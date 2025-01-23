@@ -31,6 +31,7 @@ func SetSecureCookie(w http.ResponseWriter, name string, value string, cookie_pa
 		HttpOnly: true,
 		Secure:   true,
 		Path:     cookie_path,
+		SameSite: http.SameSiteStrictMode,
 	}
 	if expires_hours > 0 {
 		cookie.MaxAge = expires_hours * 60 * 60
