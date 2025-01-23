@@ -4,7 +4,7 @@ It uses the SignInWidget and RegisterWidget components.
 -->
 
 <script lang="ts">
-import { defineComponent, onMounted, onBeforeUnmount } from 'vue';
+import { defineComponent, onMounted, onBeforeUnmount, ref } from 'vue';
 import SignInWidget from '@/components/auth/SignInWidget.vue';
 import RegisterWidget from '@/components/auth/RegisterWidget.vue';
 import CrossIcon from '@/components/icons/CrossIcon.vue';
@@ -28,17 +28,42 @@ export default defineComponent({
   },
   emits: ['updateForm', 'updateVisibility'],
   setup(props, { emit }) {
+    const message = ref('');
+    const messageType = ref<'success' | 'error' | ''>('');
+    const messageTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
+
     const closeWidget = () => {
       emit('updateVisibility', { visible: false });
     };
 
     const handleOutsideClick = (event: MouseEvent) => {
-      // if (props.isVisible) {
-      //   const target = event.target as HTMLElement;
-      //   if (!target.closest('.auth-swapper')) {
-      //     closeWidget();
-      //   }
-      // }
+      // Logic for handling outside click, if needed
+    };
+
+    const showMessage = (payload: { success: boolean; message: string }) => {
+      messageType.value = payload.success ? 'success' : 'error';
+      message.value = payload.message;
+
+      if (payload.success) {
+        emit('updateForm', 'signin'); // Switch to sign in form after successful registration
+      }
+
+      if (messageTimeout.value) {
+        clearTimeout(messageTimeout.value);
+      }
+
+      messageTimeout.value = setTimeout(() => {
+        message.value = '';
+        messageType.value = '';
+      }, 10000); // Clear message after 10 seconds
+    };
+
+    const handleLoginSuccess = (payload: { success: boolean; message?: string }) => {
+      if (payload.success) {
+        closeWidget(); // Close the widget on successful login
+      } else {
+        showMessage({ success: false, message: payload.message || 'Login failed' });
+      }
     };
 
     onMounted(() => {
@@ -47,10 +72,17 @@ export default defineComponent({
 
     onBeforeUnmount(() => {
       document.removeEventListener('click', handleOutsideClick);
+      if (messageTimeout.value) {
+        clearTimeout(messageTimeout.value);
+      }
     });
 
     return {
       closeWidget,
+      message,
+      messageType,
+      showMessage,
+      handleLoginSuccess,
     };
   },
 });
@@ -76,7 +108,17 @@ export default defineComponent({
         Register
       </button>
     </div>
-    <SignInWidget v-if="currentForm === 'signin'" />
-    <RegisterWidget v-else />
+    <!-- SignInWidget and RegisterWidget -->
+    <SignInWidget v-if="currentForm === 'signin'" @loginSuccess="handleLoginSuccess" />
+    <RegisterWidget v-else @registerSuccess="showMessage" />
+    <!-- Message Display -->
+    <div class="h-7 mt-2">
+      <div v-if="message" :class="{
+        'text-green-600': messageType === 'success',
+        'text-red-600': messageType === 'error',
+      }">
+        {{ message }}
+      </div>
+    </div>
   </div>
 </template>

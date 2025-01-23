@@ -13,6 +13,8 @@ import ArrowRightIcon from '../icons/ArrowRightIcon.vue';
 export default defineComponent({
   name: 'RegisterWidget',
 
+  emits: ['registerSuccess'],
+
   components: {
     ShowPasswordIcon,
     HidePasswordIcon,
@@ -21,15 +23,54 @@ export default defineComponent({
 
   setup(_, { emit }) {
     const passwordVisible = ref(false);
+    const isSubmitting = ref(false);
 
     // Toggle password visibility
     const togglePasswordVisibility = () => {
       passwordVisible.value = !passwordVisible.value;
     };
 
+    const clearForm = () => {
+      // Clear form fields
+      let form = document.getElementById('register-form') as HTMLFormElement;
+      form.reset();
+    };
+
+    // Handle form submission
+    const handleSubmit = async (event: Event) => {
+      event.preventDefault(); // Prevent default form submission behavior
+      isSubmitting.value = true;
+
+      const form = event.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          body: JSON.stringify(Object.fromEntries(formData.entries())),
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          emit('registerSuccess', { success: false, message: errorData.error });
+        }
+
+        // Emit success event if the request is successful
+        emit('registerSuccess', { success: true, message: 'User registered successfully ! Please log in' });
+        clearForm();
+      } catch (error: any) {
+        emit('registerSuccess', { success: false, message: error.message });
+      } finally {
+        isSubmitting.value = false;
+      }
+    };
+
     return {
       passwordVisible,
       togglePasswordVisibility,
+      handleSubmit,
+      isSubmitting,
     };
   },
 });
@@ -37,7 +78,7 @@ export default defineComponent({
 
 <template>
   <div class="flex flex-col items-center justify-center h-full">
-    <form class="flex flex-col gap-2" action="/api/user" method="POST">
+    <form id="register-form" class="flex flex-col gap-2" @submit="handleSubmit">
       <div class="auth-input-container">
         <label for="username" class="auth-input-label">Username</label>
         <input type="text" class="auth-input" placeholder="Enter your username" id="username" name="username"
@@ -60,9 +101,11 @@ export default defineComponent({
           </button>
         </div>
       </div>
-      <button type="submit" class="flex items-center justify-center w-64 p-2 bg-primary-500 text-white rounded-lg">
+      <button type="submit" :disabled="isSubmitting"
+        class="flex items-center justify-center w-64 p-2 bg-primary-500 text-white rounded-lg">
         <ArrowRightIcon class="w-6 h-6 mr-2" />
-        Register
+        <span v-if="!isSubmitting">Register</span>
+        <span v-else>Submitting...</span>
       </button>
     </form>
   </div>
