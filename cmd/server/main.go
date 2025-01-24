@@ -10,7 +10,8 @@ import (
 	"github.com/boxboxjason/jukebox/internal/constants"
 	"github.com/boxboxjason/jukebox/internal/jobs"
 	"github.com/boxboxjason/jukebox/internal/middlewares"
-	chatwebsocket "github.com/boxboxjason/jukebox/internal/websocket"
+	db_model "github.com/boxboxjason/jukebox/internal/model"
+	"github.com/boxboxjason/jukebox/internal/websocket"
 	"github.com/boxboxjason/jukebox/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -20,6 +21,9 @@ import (
 func main() {
 	// Setup the logger
 	logger.SetupLogger(constants.LOG_DIR, "DEBUG")
+
+	// Create the tables in the database
+	db_model.CreateTables()
 
 	// Create new main router
 	main_router := chi.NewRouter()
@@ -57,14 +61,12 @@ func main() {
 	main_router.Mount("/api", api_router)
 	logger.Info("Serving API at /api")
 
-	// Application du middleware d'authentification sur la route /ws/chat
-	// Cela garantira que l'utilisateur sera présent dans le contexte
-	// lors de l'établissement de la connexion WebSocket.
+	// Setup WebSocket connection route (with authentication)
 	main_router.Group(func(r chi.Router) {
 		r.Use(middlewares.AuthMiddleware)
-		r.HandleFunc("/wss/chat", chatwebsocket.ChatWebSocket)
+		r.HandleFunc("/chat/ws", websocket.EstablishConnection)
 	})
-	logger.Info("Serving WebSocket chat at /wss/chat")
+	logger.Info("Serving Chat WebSocket at /chat/ws")
 
 	// Start jobs
 	jobs.SetupJobs()
