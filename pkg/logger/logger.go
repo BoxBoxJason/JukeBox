@@ -6,187 +6,179 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"sync"
-
-	"github.com/boxboxjason/jukebox/pkg/utils/fileutils"
-	"github.com/boxboxjason/jukebox/pkg/utils/timeutils"
+	"time"
 )
 
 const (
-	MAX_LOG_SIZE = 1024 * 1024 * 10 // 10 MB
+	MAX_LOG_SIZE           = 1024 * 1024 * 10 // 10 MB
+	DEFAULT_CHANNEL_BUFFER = 1000
 )
 
-// Setup the logger to simple STDOUT logging for now
-func init() {
-	debugLogger = log.New(os.Stdout, "DEBUG: ", log.Ldate|log.Ltime)
-	infoLogger = log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime)
-	errorLogger = log.New(os.Stdout, "ERROR: ", log.Ldate|log.Ltime)
-	criticalLogger = log.New(os.Stdout, "CRITICAL: ", log.Ldate|log.Ltime)
-	fatalLogger = log.New(os.Stdout, "FATAL: ", log.Ldate|log.Ltime)
-}
-
-// Logger instances
 var (
-	// Logging directories and files
-	LOG_DIR        string
-	LOG_FILE       string
-	LOG_ROTATE_ZIP string
-	// Logging levels
-	LOG_LEVEL  int = 1
-	LOG_LEVELS     = map[string]int{
-		"DEBUG":    0,
-		"INFO":     1,
-		"ERROR":    2,
-		"CRITICAL": 3,
-		"FATAL":    4,
-	}
-	// Mutexes
-	mu_LOG_DIR        = &sync.RWMutex{}
-	mu_LOG_FILE       = &sync.RWMutex{}
-	mu_LOG_ROTATE_ZIP = &sync.RWMutex{}
-	mu_LOG_LEVEL      = &sync.RWMutex{}
-	// Loggers
-	debugLogger    *log.Logger
-	infoLogger     *log.Logger
-	errorLogger    *log.Logger
-	criticalLogger *log.Logger
-	fatalLogger    *log.Logger
+	logChannel  chan string
+	stopLogging chan struct{}
+	logWg       sync.WaitGroup
+	logFile     *os.File
+	logMutex    sync.Mutex
+	logLevel    int = 1 // Default log level: INFO
+	logFilePath string
+	loggerReady sync.WaitGroup
 )
 
-func SetupLogger(log_dir string, log_level string) {
-	// Lock the mutexes
-	mu_LOG_DIR.Lock()
-	mu_LOG_FILE.Lock()
-	mu_LOG_ROTATE_ZIP.Lock()
-	defer mu_LOG_DIR.Unlock()
-	defer mu_LOG_FILE.Unlock()
-	defer mu_LOG_ROTATE_ZIP.Unlock()
-	// Set the logging directories and files
-	LOG_DIR = log_dir
-	LOG_FILE = path.Join(LOG_DIR, "server.log")
-	LOG_ROTATE_ZIP = path.Join(LOG_DIR, "rotate.zip")
+// Log levels
+const (
+	DEBUG = iota
+	INFO
+	ERROR
+	CRITICAL
+	FATAL
+)
 
-	// Set the logging level
-	mu_LOG_LEVEL.Lock()
-	defer mu_LOG_LEVEL.Unlock()
-	if _, ok := LOG_LEVELS[strings.ToUpper(log_level)]; !ok {
-		fmt.Println("Invalid log level:", log_level, "Defaulting to INFO")
-		LOG_LEVEL = LOG_LEVELS["INFO"]
+func SetupLogger(logDir string, level string) {
+	var err error
+
+	// Map of log levels
+	logLevels := map[string]int{
+		"DEBUG":    DEBUG,
+		"INFO":     INFO,
+		"ERROR":    ERROR,
+		"CRITICAL": CRITICAL,
+		"FATAL":    FATAL,
+	}
+
+	if l, ok := logLevels[level]; ok {
+		logLevel = l
 	} else {
-		LOG_LEVEL = LOG_LEVELS[strings.ToUpper(log_level)]
+		fmt.Println("Invalid log level. Defaulting to INFO.")
+		logLevel = INFO
 	}
 
-	// Check if the directory for the log directory exists
-	err := os.MkdirAll(LOG_DIR, os.ModePerm)
+	logFilePath = path.Join(logDir, "async.log")
+
+	// Create log directory if it doesn't exist
+	if err = os.MkdirAll(logDir, os.ModePerm); err != nil {
+		log.Fatalf("Failed to create log directory: %v", err)
+	}
+
+	logFile, err = os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		fmt.Println("Failed to create log directory:", err)
-		os.Exit(1)
+		log.Fatalf("Failed to open log file: %v", err)
 	}
 
-	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
-	if err != nil {
-		fmt.Println("Fatal error: Failed to open log file:", err)
-		os.Exit(1)
-	}
+	// Initialize the logging channel and control signals
+	logChannel = make(chan string, DEFAULT_CHANNEL_BUFFER)
+	stopLogging = make(chan struct{})
 
-	multi := io.MultiWriter(file, os.Stdout)
+	// Prepare loggerReady wait group
+	loggerReady.Add(1)
 
-	// Initialize loggers
-	debugLogger = log.New(multi, "DEBUG: ", log.Ldate|log.Ltime)
-	infoLogger = log.New(multi, "INFO: ", log.Ldate|log.Ltime)
-	errorLogger = log.New(multi, "ERROR: ", log.Ldate|log.Ltime)
-	criticalLogger = log.New(multi, "CRITICAL: ", log.Ldate|log.Ltime)
-	fatalLogger = log.New(multi, "FATAL: ", log.Ldate|log.Ltime)
+	// Start the asynchronous logger goroutine
+	go asyncLogger()
+
+	// Wait for the logger to be ready
+	loggerReady.Wait()
 }
 
-// Debug logs a debug message.
+func asyncLogger() {
+	defer logWg.Done()
+	logWg.Add(1)
+
+	logger := log.New(io.MultiWriter(logFile, os.Stdout), "", log.Ldate|log.Ltime)
+
+	// Signal that the logger is ready
+	loggerReady.Done()
+
+	for {
+		select {
+		case logMessage := <-logChannel:
+			logger.Println(logMessage)
+			checkLogRotation() // Rotate log if needed
+		case <-stopLogging:
+			// Flush remaining logs
+			for len(logChannel) > 0 {
+				logger.Println(<-logChannel)
+			}
+			return
+		}
+	}
+}
+
+func checkLogRotation() {
+	logMutex.Lock()
+	defer logMutex.Unlock()
+
+	fileInfo, err := logFile.Stat()
+	if err != nil {
+		fmt.Println("Failed to get log file info:", err)
+		return
+	}
+
+	if fileInfo.Size() >= MAX_LOG_SIZE {
+		// Rotate log file
+		newFileName := fmt.Sprintf("%s.%d", logFilePath, time.Now().Unix())
+		if err := os.Rename(logFilePath, newFileName); err != nil {
+			fmt.Println("Failed to rotate log file:", err)
+			return
+		}
+
+		logFile.Close()
+		logFile, err = os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			fmt.Println("Failed to open new log file:", err)
+			return
+		}
+	}
+}
+
 func Debug(v ...interface{}) {
-	if LOG_LEVEL <= 0 {
-		debugLogger.Println(v...)
+	if logLevel <= DEBUG {
+		logMessage("DEBUG", v...)
 	}
 }
 
-// Info logs an info message.
 func Info(v ...interface{}) {
-	if LOG_LEVEL <= 1 {
-		infoLogger.Println(v...)
+	if logLevel <= INFO {
+		logMessage("INFO", v...)
 	}
 }
 
-// Error logs an error message.
 func Error(v ...interface{}) {
-	if LOG_LEVEL <= 2 {
-		errorLogger.Println(v...)
+	if logLevel <= ERROR {
+		logMessage("ERROR", v...)
 	}
 }
 
-// Critical logs a critical message but does not exit the application.
 func Critical(v ...interface{}) {
-	if LOG_LEVEL <= 3 {
-		criticalLogger.Println(v...)
+	if logLevel <= CRITICAL {
+		logMessage("CRITICAL", v...)
 	}
 }
 
-// Fatal logs a fatal message and exits the application.
 func Fatal(v ...interface{}) {
-	if LOG_LEVEL <= 4 {
-		fatalLogger.Println(v...)
+	if logLevel <= FATAL {
+		logMessage("FATAL", v...)
+		ShutdownLogger()
+		os.Exit(1)
 	}
-	os.Exit(1)
 }
 
-func isLogFileFull() bool {
-	file, err := os.Open(LOG_FILE)
-	if err != nil {
-		log.Fatalln("Failed to open log file:", err)
+func logMessage(level string, v ...interface{}) {
+	msg := fmt.Sprintf("%s: %s", level, fmt.Sprintln(v...))
+	if len(msg) > 0 && msg[len(msg)-1] == '\n' {
+		msg = msg[:len(msg)-1]
 	}
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		log.Fatalln("Failed to get log file info:", err)
+	select {
+	case logChannel <- msg:
+	default:
+		fmt.Println("Log channel full, dropping log:", msg)
 	}
-
-	return fileInfo.Size() >= MAX_LOG_SIZE
 }
 
-// RotateLogFile rotates the log file if it is full.
-func RotateLogFile() {
-	if isLogFileFull() {
-		// Rename the current log file
-		rotate_filename := timeutils.GetDatetimeString() + ".log"
-		rotate_path := path.Join(LOG_DIR, rotate_filename)
-		err := os.Rename(LOG_FILE, rotate_path)
-		if err != nil {
-			Error("Failed to rotate log file:", err)
-			return
-		}
-
-		// Create a new log file
-		file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err != nil {
-			Error("Failed to open the new log file:", err)
-			return
-		}
-
-		// Update the loggers
-		multi := io.MultiWriter(file, os.Stdout)
-		debugLogger.SetOutput(multi)
-		infoLogger.SetOutput(multi)
-		errorLogger.SetOutput(multi)
-		criticalLogger.SetOutput(multi)
-		fatalLogger.SetOutput(multi)
-
-		// Compress the rotated log file
-		err = fileutils.CompressFiles(LOG_ROTATE_ZIP, []string{rotate_path})
-		if err != nil {
-			Error("Failed to compress the rotated log file:", err)
-		}
-
-		// Remove the rotated log file
-		err = os.Remove(rotate_path)
-		if err != nil {
-			Error("Failed to remove the rotated log file:", err)
-		}
+func ShutdownLogger() {
+	close(stopLogging)
+	logWg.Wait()
+	if logFile != nil {
+		logFile.Close()
 	}
 }

@@ -11,10 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func init() {
-	CreateTables()
-}
-
 // Initialize the database connection and create the tables
 func CreateTables() {
 	db, err := OpenConnection()
