@@ -437,34 +437,36 @@ paths:
       security:
         - HttpAuth: []
         - CookieAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: ID of a user to ban
-          required: true
+    parameters:
+      - name: id
+        in: path
+        description: ID of a user to ban
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: integer
-        - name: reason
-          in: query
-          description: Reason for ban
-          required: true
-          schema:
-            type: string
-        - name: duration
-          in: query
-          description: Duration of the ban in seconds
-          required: false
-          schema:
-            type: integer
-        - name: type
-          in: query
-          description: Type of ban (mute or ban)
-          required: true
-          schema:
-            type: string
-            enum:
-              - mute
-              - ban
+            type: object
+            properties:
+              reason:
+                type: string
+                description: Reason for ban
+              duration:
+                type: integer
+                description: Duration of the ban in seconds
+                nullable: true
+              type:
+                type: string
+                description: Type of ban (mute or ban)
+                enum:
+                  - mute
+                  - ban
+            required:
+              - reason
+              - type
       responses:
         "200":
           description: OK
@@ -622,7 +624,9 @@ paths:
           description: Filter messages by content
           required: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: OK
@@ -689,7 +693,9 @@ paths:
           description: Filter messages by content
           required: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: OK
@@ -776,7 +782,7 @@ paths:
         - HttpAuth: []
         - CookieAuth: []
       parameters:
-        - name: sender
+        - name: sender_id
           in: query
           description: ID of the sender of the message
           required: false
@@ -807,7 +813,9 @@ paths:
           description: Filter messages by content
           required: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
       responses:
         "200":
           description: OK
@@ -1119,14 +1127,22 @@ paths:
           description: Filter bans by issuer ID
           required: false
           schema:
-            type: integer
+            type: array
+            items:
+              type: integer
         - name: ends_after
           in: query
           description: Filter bans by end date
           required: false
           schema:
-            type: integer
+            type: string
             format: date-time
+        - name: reason
+          in: query
+          description: Filter bans by reason
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: OK
@@ -1196,7 +1212,9 @@ paths:
           description: Filter bans by issuer ID
           required: false
           schema:
-            type: integer
+            type: array
+            items:
+              type: integer
       responses:
         "200":
           description: OK
@@ -1548,8 +1566,8 @@ components:
       properties:
         id:
           type: integer
-        sender_id:
-          type: integer
+        sender:
+          $ref: "#/components/schemas/User"
         content:
           type: string
         flagged:

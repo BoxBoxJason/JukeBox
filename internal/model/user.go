@@ -1,6 +1,9 @@
 package db_model
 
 import (
+	"mime/multipart"
+	"time"
+
 	"github.com/boxboxjason/jukebox/pkg/utils/cryptutils"
 	"gorm.io/gorm"
 )
@@ -19,8 +22,65 @@ type User struct {
 	Messages           []*Message   `gorm:"foreignKey:SenderID" json:"-"`
 	Tokens             []*AuthToken `gorm:"foreignKey:UserID" json:"-"`
 	Bans               []*Ban       `gorm:"foreignKey:TargetID" json:"-"`
-	CreatedAt          int          `gorm:"autoCreateTime" json:"created_at"`
-	ModifiedAt         int          `gorm:"autoUpdateTime:milli" json:"modified_at"`
+	CreatedAt          time.Time    `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt         time.Time    `gorm:"autoUpdateTime:milli" json:"modified_at"`
+}
+
+// ==================== USER ====================
+
+// UsersPostRequestParams is the struct for the request body of the POST users endpoint
+type UsersPostRequestParams struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
+// UsersGetRequestParams is the struct for the request body of the GET users endpoint
+type UsersGetRequestParams struct {
+	Order           string   `json:"order"`
+	Limit           int      `json:"limit"`
+	Page            int      `json:"page"`
+	Offset          int      `json:"offset"`
+	Username        []string `json:"username"`
+	PartialUsername []string `json:"partial_username"`
+	ID              []int    `json:"id"`
+	SubscriberTier  int      `json:"subscriber_tier"`
+	Admin           []bool   `json:"admin"`
+	Email           []string `json:"email"`
+}
+
+// UsersDeleteRequestParams is the struct for the request body of the DELETE users endpoint
+type UsersDeleteRequestParams struct {
+	Order    string   `json:"order"`
+	Limit    int      `json:"limit"`
+	Page     int      `json:"page"`
+	Offset   int      `json:"offset"`
+	ID       []int    `json:"id"`
+	Username []string `json:"username"`
+	Email    []string `json:"email"`
+	Reason   string   `json:"reason"`
+}
+
+// UsersPatchRequestParams is the struct for the request body of the PATCH users endpoint
+type UsersPatchRequestParams struct {
+	ID             int    `json:"id"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	SubscriberTier int    `json:"subscriber_tier"`
+	Admin          []bool `json:"admin"`
+	Avatar         string `json:"avatar"`
+}
+
+// UsersRawPatchRequestParams is the struct for the request body of the PATCH users endpoint
+type UsersRawPatchRequestParams struct {
+	ID             int            `json:"id"`
+	Username       string         `json:"username"`
+	Email          string         `json:"email"`
+	Password       string         `json:"password"`
+	SubscriberTier int            `json:"subscriber_tier"`
+	Admin          []bool         `json:"admin"`
+	Avatar         multipart.File `json:"avatar"`
 }
 
 // ================ CRUD Operations ================
@@ -80,7 +140,7 @@ func GetAllUsers(db *gorm.DB) ([]*User, error) {
 	return users, err
 }
 
-func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, emails []string, partial_usernames []string, admin []bool, minimum_subscriber_tier int) ([]*User, error) {
+func GetUsersByFilters(db *gorm.DB, query_params *UsersGetRequestParams) ([]*User, error) {
 	users := []*User{}
 	query := db
 
@@ -88,23 +148,23 @@ func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, emails []stri
 	orConditions := db // Start an empty query for OR conditions
 
 	// IDs
-	if len(ids) > 0 {
-		orConditions = orConditions.Or("id IN ?", ids)
+	if len(query_params.ID) > 0 {
+		orConditions = orConditions.Or("id IN ?", query_params.ID)
 	}
 
 	// Usernames
-	if len(usernames) > 0 {
-		orConditions = orConditions.Or("username IN ?", usernames)
+	if len(query_params.Username) > 0 {
+		orConditions = orConditions.Or("username IN ?", query_params.Username)
 	}
 
 	// Emails
-	if len(emails) > 0 {
-		orConditions = orConditions.Or("email IN ?", emails)
+	if len(query_params.Email) > 0 {
+		orConditions = orConditions.Or("email IN ?", query_params.Email)
 	}
 
 	// Partial usernames
-	if len(partial_usernames) > 0 {
-		for _, partial_username := range partial_usernames {
+	if len(query_params.PartialUsername) > 0 {
+		for _, partial_username := range query_params.PartialUsername {
 			orConditions = orConditions.Or("username LIKE ?", "%"+partial_username+"%")
 		}
 	}
@@ -113,12 +173,15 @@ func GetUsersByFilters(db *gorm.DB, ids []int, usernames []string, emails []stri
 	query = query.Where(orConditions)
 
 	// Apply the remaining "AND" filters
-	if len(admin) == 1 {
-		query = query.Where("admin = ?", admin[0])
+	if len(query_params.Admin) == 1 {
+		query = query.Where("admin = ?", query_params.Admin[0])
 	}
-	if minimum_subscriber_tier > 0 {
-		query = query.Where("subscriber_tier >= ?", minimum_subscriber_tier)
+	if query_params.SubscriberTier > 0 {
+		query = query.Where("subscriber_tier >= ?", query_params.SubscriberTier)
 	}
+
+	// Apply order, limit, page, and offset
+	query = AddQueryParamsToDB(query, query_params.Order, query_params.Limit, query_params.Page, query_params.Offset)
 
 	err := query.Find(&users).Error
 	return users, err

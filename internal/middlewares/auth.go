@@ -11,7 +11,6 @@ import (
 	"github.com/boxboxjason/jukebox/internal/constants"
 	db_model "github.com/boxboxjason/jukebox/internal/model"
 	"github.com/boxboxjason/jukebox/pkg/utils/httputils"
-	"github.com/boxboxjason/jukebox/pkg/utils/timeutils"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -43,7 +42,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			httputils.SendErrorToClient(w, err)
 			return
 		} else if len(bans) > 0 {
-			httputils.SendErrorToClient(w, httputils.NewForbiddenError(fmt.Sprintf("User is banned until %s for reason: %s", timeutils.ConvertUnixTimestampToDatetimeString(bans[0].EndsAt), bans[0].Reason)))
+			httputils.SendErrorToClient(w, httputils.NewForbiddenError(fmt.Sprintf("User is banned until %s for reason: %s", bans[0].EndsAt, bans[0].Reason)))
 			return
 		}
 
@@ -92,7 +91,7 @@ func AdminAuthMiddleware(next http.Handler) http.Handler {
 			httputils.SendErrorToClient(w, err)
 			return
 		} else if len(bans) > 0 {
-			httputils.SendErrorToClient(w, httputils.NewForbiddenError(fmt.Sprintf("User is banned until %s for reason: %s", timeutils.ConvertUnixTimestampToDatetimeString(bans[0].EndsAt), bans[0].Reason)))
+			httputils.SendErrorToClient(w, httputils.NewForbiddenError(fmt.Sprintf("User is banned until %s for reason: %s", bans[0].EndsAt, bans[0].Reason)))
 			return
 		}
 
@@ -117,13 +116,6 @@ func AdminAuthMiddleware(next http.Handler) http.Handler {
 }
 
 func getUserIDAndAccessToken(r *http.Request) (int, string, error) {
-	// Lire le token depuis les query parameters
-	token := r.URL.Query().Get("token")
-
-	if token != "" {
-		return DecodeIdentityBearerToUserAndToken(token)
-	}
-
 	identity_bearer, err := readAccessCookie(r)
 	if err != nil {
 		identity_bearer, err = httputils.RetrieveAuthorizationToken(r, constants.AUTH_SCHEME)

@@ -13,10 +13,10 @@ import (
 // ================= Create =================
 
 // CreateMessage creates a new message in the database
-func CreateMessage(db *gorm.DB, message string, user *db_model.User) (*db_model.Message, error) {
+func CreateMessage(db *gorm.DB, query_params *db_model.MessagesPostRequestParams) (*db_model.Message, error) {
 	db_message := db_model.Message{
-		Sender:  user,
-		Content: strings.TrimSpace(message),
+		Sender:  query_params.Sender,
+		Content: strings.TrimSpace(query_params.Message),
 	}
 
 	// Open db connection
@@ -34,13 +34,13 @@ func CreateMessage(db *gorm.DB, message string, user *db_model.User) (*db_model.
 		return &db_message, err
 	}
 
-	err = user.IncreaseContributionsCount(db)
+	err = query_params.Sender.IncreaseContributionsCount(db)
 
 	return &db_message, err
 }
 
 // ================= Read =================
-func GetMessages(db *gorm.DB, ids []int, sender_ids []int, flagged []bool, censored []bool, removed []bool, contains []string) ([]*db_model.Message, error) {
+func GetMessages(db *gorm.DB, query_params *db_model.MessagesGetRequestParams) ([]*db_model.Message, error) {
 	// Open db connection
 	if db == nil {
 		var err error
@@ -51,19 +51,19 @@ func GetMessages(db *gorm.DB, ids []int, sender_ids []int, flagged []bool, censo
 		defer db_model.CloseConnection(db)
 	}
 
-	for _, id := range ids {
+	for _, id := range query_params.ID {
 		if id < 0 {
 			return nil, httputils.NewBadRequestError("id must be a positive integer")
 		}
 	}
 
-	for _, sender_id := range sender_ids {
+	for _, sender_id := range query_params.SenderID {
 		if sender_id < 0 {
 			return nil, httputils.NewBadRequestError("sender_id must be a positive integer")
 		}
 	}
 
-	return db_model.GetMessages(db, ids, sender_ids, flagged, censored, removed, contains)
+	return db_model.GetMessages(db.Preload("Sender"), query_params)
 }
 
 func GetMessage(id int) (*db_model.Message, error) {
@@ -73,13 +73,13 @@ func GetMessage(id int) (*db_model.Message, error) {
 		return nil, err
 	}
 	defer db_model.CloseConnection(db)
-	return db_model.GetMessageByID(db, id)
+	return db_model.GetMessageByID(db.Preload("Sender"), id)
 }
 
 // ================= Update =================
 
 // UpdateMessage updates a message in the database
-func UpdateMessage(db *gorm.DB, db_message *db_model.Message, message string, flagged []bool, censored []bool, removed []bool) (*db_model.Message, error) {
+func UpdateMessage(db *gorm.DB, query_params *db_model.MessagesPatchRequestParams) (*db_model.Message, error) {
 	// Open db connection
 	if db == nil {
 		var err error
@@ -90,25 +90,62 @@ func UpdateMessage(db *gorm.DB, db_message *db_model.Message, message string, fl
 		defer db_model.CloseConnection(db)
 	}
 
-	if len(message) > 0 {
-		db_message.Content = message
+	db_message, err := db_model.GetMessageByID(db.Preload("Sender"), query_params.ID)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(flagged) > 0 {
-		db_message.Flagged = flagged[0]
+	if len(query_params.Message) > 0 {
+		db_message.Content = query_params.Message
 	}
 
-	if len(censored) > 0 {
-		db_message.Censored = censored[0]
+	if len(query_params.Flagged) > 0 {
+		db_message.Flagged = query_params.Flagged[0]
 	}
 
-	if len(removed) > 0 {
-		db_message.Removed = removed[0]
+	if len(query_params.Censored) > 0 {
+		db_message.Censored = query_params.Censored[0]
+	}
+
+	if len(query_params.Removed) > 0 {
+		db_message.Removed = query_params.Removed[0]
 	}
 
 	// Update the message
-	err := db_message.UpdateMessage(db)
+	err = db_message.UpdateMessage(db)
 	return db_message, err
+}
+
+// UpdateExistingMessage updates an existing message in the database
+func UpdateExistingMessage(db *gorm.DB, message *db_model.Message, query_params *db_model.MessagesPatchRequestParams) error {
+	// Open db connection
+	if db == nil {
+		var err error
+		db, err = db_model.OpenConnection()
+		if err != nil {
+			return err
+		}
+		defer db_model.CloseConnection(db)
+	}
+
+	if len(query_params.Message) > 0 {
+		message.Content = query_params.Message
+	}
+
+	if len(query_params.Flagged) > 0 {
+		message.Flagged = query_params.Flagged[0]
+	}
+
+	if len(query_params.Censored) > 0 {
+		message.Censored = query_params.Censored[0]
+	}
+
+	if len(query_params.Removed) > 0 {
+		message.Removed = query_params.Removed[0]
+	}
+
+	// Update the message
+	return message.UpdateMessage(db)
 }
 
 // ================= Delete =================
@@ -125,17 +162,10 @@ func DeleteMessage(db *gorm.DB, id int) error {
 		defer db_model.CloseConnection(db)
 	}
 
-	// Retrieve the message
-	db_message, err := db_model.GetMessageByID(db, id)
-	if err != nil {
-		return err
-	}
-
-	// Delete the message
-	return db_message.DeleteMessage(db)
+	return db_model.DeleteMessage(db, id)
 }
 
-func DeleteMessages(db *gorm.DB, ids []int, sender_ids []int, flagged []bool, censored []bool, removed []bool, contains []string) error {
+func DeleteMessages(db *gorm.DB, query_params *db_model.MessagesDeleteRequestParams) error {
 	// Open db connection
 	if db == nil {
 		var err error
@@ -147,7 +177,7 @@ func DeleteMessages(db *gorm.DB, ids []int, sender_ids []int, flagged []bool, ce
 	}
 
 	// Retrieve all messages
-	messages, err := db_model.GetMessages(db, ids, sender_ids, flagged, censored, removed, contains)
+	messages, err := db_model.GetMessages(db, (*db_model.MessagesGetRequestParams)(query_params))
 	if err != nil {
 		return err
 	}
