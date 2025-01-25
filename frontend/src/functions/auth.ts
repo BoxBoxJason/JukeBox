@@ -115,3 +115,12 @@ export function clearIdentity() {
   localStorage.removeItem(LOCAL_STORAGE_KEYS.USERNAME);
   localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_ID);
 }
+
+export function getUsername(): string | null {
+  return localStorage.getItem(LOCAL_STORAGE_KEYS.USERNAME);
+}
+
+export function getUserId(): number | null {
+  const userId = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID);
+  return userId == null ? null : parseInt(userId);
+}
