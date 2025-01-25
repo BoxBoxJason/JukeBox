@@ -3,9 +3,9 @@ module github.com/boxboxjason/jukebox
 go 1.22.7
 
 require (
+	github.com/coder/websocket v1.8.12
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/cors v1.2.1
-	github.com/gorilla/websocket v1.5.3
 	golang.org/x/crypto v0.28.0
 	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.12
