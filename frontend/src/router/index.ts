@@ -21,9 +21,17 @@ const routes: Array<RouteRecordRaw> = [
     name: 'about',
     component: () => import('../views/AboutView.vue'),
     meta: {
-      title: 'About | JukeBox'
+      title: 'JukeBox | About'
     } as CustomRouteMeta
-  }
+  },
+  {
+    path: '/help',
+    name: 'help',
+    component: () => import('../views/HelpView.vue'),
+    meta: {
+      title: 'JukeBox | Help'
+    } as CustomRouteMeta
+  },
 ];
 
 const router = createRouter({
