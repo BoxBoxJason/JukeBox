@@ -1,6 +1,6 @@
 <!--
-Website about page
-Explanation of our project, our goals, the team, and the technology stack
+Website help page
+Explanation of how to use the website
 Displays navigation / legal footer
 -->
 
