@@ -31,6 +31,7 @@ export default defineComponent({
 
     const handleStorageEvent = (event: CustomEvent) => {
       syncFromLocalStorage();
+      location.reload();
     };
 
     // Load user data from localStorage on mount
@@ -59,6 +60,7 @@ export default defineComponent({
       if (success) {
         username.value = null;
         userId.value = null;
+        location.reload();
       }
     };
 
