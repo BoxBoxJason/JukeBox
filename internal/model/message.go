@@ -1,17 +1,70 @@
 package db_model
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Message struct {
-	ID         int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Sender     *User  `gorm:"foreignKey:SenderID;constraint:OnDelete:CASCADE" json:"-"`
-	SenderID   int    `gorm:"type:INTEGER;not null" json:"sender_id"`
-	Content    string `gorm:"type:TEXT;not null" json:"content"`
-	Flagged    bool   `gorm:"type:BOOLEAN;default:false" json:"flagged"`
-	Removed    bool   `gorm:"type:BOOLEAN;default:false" json:"removed"`
-	Censored   bool   `gorm:"type:BOOLEAN;default:false" json:"censored"`
-	CreatedAt  int    `gorm:"autoCreateTime" json:"created_at"`
-	ModifiedAt int    `gorm:"autoUpdateTime:milli" json:"modified_at"`
+	ID         int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	Sender     *User     `gorm:"foreignKey:SenderID;constraint:OnDelete:CASCADE" json:"sender"`
+	SenderID   int       `gorm:"type:INTEGER;not null" json:"-"`
+	Content    string    `gorm:"type:TEXT;not null" json:"content"`
+	Flagged    bool      `gorm:"type:BOOLEAN;default:false" json:"flagged"`
+	Removed    bool      `gorm:"type:BOOLEAN;default:false" json:"removed"`
+	Censored   bool      `gorm:"type:BOOLEAN;default:false" json:"censored"`
+	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt time.Time `gorm:"autoUpdateTime:milli" json:"modified_at"`
+}
+
+// ==================== Requests parameters ====================
+
+// MessagesPostRequestParams is the struct for the request body of the POST messages endpoint
+type MessagesPostRequestParams struct {
+	Message string `json:"message"`
+	Sender  *User  `json:"sender"`
+}
+
+// MessagesGetRequestParams is the struct for the request body of the GET messages endpoint
+type MessagesGetRequestParams struct {
+	Order    string   `json:"order"`
+	Limit    int      `json:"limit"`
+	Page     int      `json:"page"`
+	Offset   int      `json:"offset"`
+	ID       []int    `json:"id"`
+	SenderID []int    `json:"sender_id"`
+	Flagged  []bool   `json:"flagged"`
+	Censored []bool   `json:"censored"`
+	Removed  []bool   `json:"removed"`
+	Contains []string `json:"contains"`
+}
+
+// MessagesPatchRequestParams is the struct for the request body of the PATCH messages endpoint
+type MessagesPatchRequestParams struct {
+	Order    string `json:"order"`
+	Limit    int    `json:"limit"`
+	Page     int    `json:"page"`
+	Offset   int    `json:"offset"`
+	ID       int    `json:"id"`
+	Message  string `json:"message"`
+	Removed  []bool `json:"removed"`
+	Flagged  []bool `json:"flagged"`
+	Censored []bool `json:"censored"`
+}
+
+// MessagesDeleteRequestParams is the struct for the request body of the DELETE messages endpoint
+type MessagesDeleteRequestParams struct {
+	Order    string   `json:"order"`
+	Limit    int      `json:"limit"`
+	Page     int      `json:"page"`
+	Offset   int      `json:"offset"`
+	ID       []int    `json:"id"`
+	SenderID []int    `json:"sender_id"`
+	Flagged  []bool   `json:"flagged"`
+	Censored []bool   `json:"censored"`
+	Removed  []bool   `json:"removed"`
+	Contains []string `json:"contains"`
 }
 
 // ================ CRUD Operations ================
@@ -125,28 +178,31 @@ func (user *User) GetCensoredMessages(db *gorm.DB) ([]*Message, error) {
 	return messages, err
 }
 
-func GetMessages(db *gorm.DB, ids []int, sender_ids []int, flagged []bool, censored []bool, removed []bool, contains []string) ([]*Message, error) {
+func GetMessages(db *gorm.DB, query_params *MessagesGetRequestParams) ([]*Message, error) {
 	query := db
-	for _, s := range contains {
+	for _, s := range query_params.Contains {
 		query = query.Or("content LIKE ?", "%"+s+"%")
 	}
 
-	if len(sender_ids) > 0 {
-		query = query.Where("sender_id IN ?", sender_ids)
+	if len(query_params.SenderID) > 0 {
+		query = query.Where("sender_id IN ?", query_params.SenderID)
 	}
-	if len(flagged) > 0 {
-		query = query.Where("flagged = ?", flagged[0])
+	if len(query_params.Flagged) > 0 {
+		query = query.Where("flagged = ?", query_params.Flagged[0])
 	}
-	if len(censored) > 0 {
-		query = query.Where("censored = ?", censored[0])
+	if len(query_params.Censored) > 0 {
+		query = query.Where("censored = ?", query_params.Censored[0])
 	}
-	if len(removed) > 0 {
-		query = query.Where("removed = ?", removed[0])
+	if len(query_params.Removed) > 0 {
+		query = query.Where("removed = ?", query_params.Removed[0])
 	}
 
-	if len(ids) > 0 {
-		query = query.Or("id IN ?", ids)
+	if len(query_params.ID) > 0 {
+		query = query.Or("id IN ?", query_params.ID)
 	}
+
+	// Apply order, limit, page, and offset
+	query = AddQueryParamsToDB(query, query_params.Order, query_params.Limit, query_params.Page, query_params.Offset)
 
 	var messages []*Message
 	err := query.Find(&messages).Error
@@ -165,6 +221,14 @@ func (message *Message) UpdateMessage(db *gorm.DB) error {
 // DeleteMessage deletes a message from the database
 func (message *Message) DeleteMessage(db *gorm.DB) error {
 	return db.Delete(message).Error
+}
+
+func DeleteMessage(db *gorm.DB, id int) error {
+	message, err := GetMessageByID(db, id)
+	if err != nil {
+		return err
+	}
+	return message.DeleteMessage(db)
 }
 
 // DeleteMessages deletes multiple messages from the database

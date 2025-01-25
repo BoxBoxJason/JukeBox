@@ -41,7 +41,7 @@ const (
 	// Access token cookie name
 	ACCESS_TOKEN_COOKIE_NAME = "accessToken"
 	// Access token cookie path
-	ACCESS_TOKEN_COOKIE_PATH = "/api"
+	ACCESS_TOKEN_COOKIE_PATH = "/"
 	// Access token expiration in hours
 	ACCESS_TOKEN_EXPIRATION = 4
 	// Access token context key (used to store/retrieve the token from the context)
@@ -82,6 +82,10 @@ const (
 	REMOVED_PARAMETER          = "removed"
 	CONTAINS_PARAMETER         = "contains"
 	MESSAGE_PARAMETER          = "message"
+	ORDER_PARAMETER            = "order"
+	LIMIT_PARAMETER            = "limit"
+	PAGE_PARAMETER             = "page"
+	OFFSET_PARAMETER           = "offset"
 )
 
 func init() {

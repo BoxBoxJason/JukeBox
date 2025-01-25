@@ -61,7 +61,10 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the message
-	message, err := db_controller.CreateMessage(nil, message_content, user)
+	message, err := db_controller.CreateMessage(nil, &db_model.MessagesPostRequestParams{
+		Sender:  user,
+		Message: message_content,
+	})
 	if err != nil {
 		logger.Error("Failed to create message", err)
 		httputils.SendErrorToClient(w, httputils.NewInternalServerError("Failed to create message"))
@@ -76,44 +79,64 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 // GetMessages retrieves messages depending on the query parameters
 func GetMessages(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the message IDs from the query parameters
 	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the sender IDs from the query parameters
 	sender_ids, err := httputils.RetrieveIntListValueParameter(r, constants.SENDER_ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the flagged status from the query parameters
 	flagged, err := httputils.RetrieveBoolParameter(r, constants.FLAGGED_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the censored status from the query parameters
 	censored, err := httputils.RetrieveBoolParameter(r, constants.CENSORED_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the removed status from the query parameters
 	removed, err := httputils.RetrieveBoolParameter(r, constants.REMOVED_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the contains string from the query parameters
 	contains, err := httputils.RetrieveStringListValueParameter(r, constants.CONTAINS_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the base parameters for the request
+	order, limit, page, offset := retrieveBaseParams(r)
+
 	// Retrieve the messages
-	messages, err := db_controller.GetMessages(nil, ids, sender_ids, flagged, censored, removed, contains)
+	messages, err := db_controller.GetMessages(nil, &db_model.MessagesGetRequestParams{
+		ID:       ids,
+		SenderID: sender_ids,
+		Flagged:  flagged,
+		Censored: censored,
+		Removed:  removed,
+		Contains: contains,
+		Order:    order,
+		Limit:    limit,
+		Page:     page,
+		Offset:   offset,
+	})
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -125,6 +148,7 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 // GetMessage retrieves a message by its ID
 func GetMessage(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the message ID from the query parameters
 	message_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
@@ -154,7 +178,9 @@ func GetMessage(w http.ResponseWriter, r *http.Request) {
 
 // ==================== Update ====================
 
+// UpdateMessage updates a message in the database
 func UpdateMessage(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the message ID from the query parameters
 	message_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
@@ -216,13 +242,21 @@ func UpdateMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if the user is the sender of the message
 	if message.SenderID != user.ID && len(message_content) > 0 {
 		httputils.SendErrorToClient(w, httputils.NewForbiddenError("only the sender can update the message content"))
 		return
 	}
 
 	// Update the message
-	message, err = db_controller.UpdateMessage(nil, message, message_content, censored, flagged, removed)
+	err = db_controller.UpdateExistingMessage(db, message, &db_model.MessagesPatchRequestParams{
+		ID:       message_id,
+		Message:  message_content,
+		Censored: censored,
+		Flagged:  flagged,
+		Removed:  removed,
+	})
+
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
@@ -236,6 +270,7 @@ func UpdateMessage(w http.ResponseWriter, r *http.Request) {
 
 // DeleteMessage deletes a message by its ID
 func DeleteMessage(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the message ID from the query parameters
 	message_id, err := httputils.RetrieveChiIntArgument(r, constants.ID_PARAMETER)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
@@ -251,18 +286,9 @@ func DeleteMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db_model.CloseConnection(db)
 
-	// Retrieve the message
-	message, err := db_model.GetMessageByID(db, message_id)
-	if err != nil {
-		logger.Error("Failed to retrieve message", err)
-		httputils.SendErrorToClient(w, httputils.NewNotFoundError("Message not found"))
-		return
-	}
-
 	// Delete the message
-	err = message.DeleteMessage(db)
+	err = db_model.DeleteMessage(db, message_id)
 	if err != nil {
-		logger.Error("Failed to delete message", err)
 		httputils.SendErrorToClient(w, httputils.NewInternalServerError("Failed to delete message"))
 		return
 	}
@@ -273,44 +299,64 @@ func DeleteMessage(w http.ResponseWriter, r *http.Request) {
 
 // DeleteMessages deletes messages depending on the query parameters
 func DeleteMessages(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the message IDs from the query parameters
 	ids, err := httputils.RetrieveIntListValueParameter(r, constants.ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the sender IDs from the query parameters
 	sender_ids, err := httputils.RetrieveIntListValueParameter(r, constants.SENDER_ID_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the flagged status from the query parameters
 	flagged, err := httputils.RetrieveBoolParameter(r, constants.FLAGGED_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the censored status from the query parameters
 	censored, err := httputils.RetrieveBoolParameter(r, constants.CENSORED_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the removed status from the query parameters
 	removed, err := httputils.RetrieveBoolParameter(r, constants.REMOVED_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the contains string from the query parameters
 	contains, err := httputils.RetrieveStringListValueParameter(r, constants.CONTAINS_PARAMETER, true)
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return
 	}
 
+	// Retrieve the base parameters for the request
+	order, limit, page, offset := retrieveBaseParams(r)
+
 	// Delete the messages
-	err = db_controller.DeleteMessages(nil, ids, sender_ids, flagged, censored, removed, contains)
+	err = db_controller.DeleteMessages(nil, &db_model.MessagesDeleteRequestParams{
+		ID:       ids,
+		SenderID: sender_ids,
+		Flagged:  flagged,
+		Censored: censored,
+		Removed:  removed,
+		Contains: contains,
+		Order:    order,
+		Limit:    limit,
+		Page:     page,
+		Offset:   offset,
+	})
 	if err != nil {
 		httputils.SendErrorToClient(w, err)
 		return

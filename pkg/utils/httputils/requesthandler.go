@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -16,8 +17,10 @@ import (
 // RetrieveAuthorizationToken retrieves the authorization token from the request header.
 func RetrieveAuthorizationToken(r *http.Request, authorization_scheme string) (string, error) {
 	auth_header := r.Header.Get("Authorization")
-	if !strings.HasPrefix(auth_header, authorization_scheme) {
-		return "", NewUnauthorizedError("Invalid authorization scheme")
+	if auth_header == "" {
+		return "", NewUnauthorizedError("missing authorization header")
+	} else if !strings.HasPrefix(auth_header, authorization_scheme) {
+		return "", NewUnauthorizedError("invalid authorization scheme")
 	}
 	return strings.TrimSpace(strings.TrimPrefix(auth_header, authorization_scheme)), nil
 }
@@ -26,7 +29,7 @@ func RetrieveAuthorizationToken(r *http.Request, authorization_scheme string) (s
 func RetrieveChiStringArgument(r *http.Request, argument_name string) (string, error) {
 	argument := chi.URLParam(r, argument_name)
 	if argument == "" {
-		return "", NewBadRequestError("Missing argument: " + argument_name)
+		return "", NewBadRequestError("missing argument: " + argument_name)
 	}
 	return strings.TrimSpace(argument), nil
 }
@@ -35,7 +38,7 @@ func RetrieveChiStringArgument(r *http.Request, argument_name string) (string, e
 func RetrieveChiIntArgument(r *http.Request, argument_name string) (int, error) {
 	argument := strings.TrimSpace(chi.URLParam(r, argument_name))
 	if argument == "" {
-		return 0, NewBadRequestError("Missing argument: " + argument_name)
+		return 0, NewBadRequestError("missing argument: " + argument_name)
 	}
 	return strconv.Atoi(argument)
 }
@@ -45,21 +48,47 @@ func RetrieveChiIntArgument(r *http.Request, argument_name string) (int, error) 
 func RetrieveStringParameter(r *http.Request, field_name string, missing_ok bool) (string, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return "", NewBadRequestError("Failed to parse form")
+		return "", NewBadRequestError("failed to parse form")
 	}
 
 	values := r.Form[field_name]
 	if len(values) == 0 {
 		if !missing_ok {
-			return "", NewBadRequestError("Missing parameter: " + field_name)
+			return "", NewBadRequestError("missing parameter: " + field_name)
 		} else {
 			return "", nil
 		}
 	}
 	if len(values) > 1 {
-		return "", NewBadRequestError("Multiple values found for parameter: " + field_name)
+		return "", NewBadRequestError("multiple values found for parameter: " + field_name)
 	}
 	return strings.TrimSpace(values[0]), nil
+}
+
+// RetrieveTimeStampParameter retrieves a single-value parameter from form data
+// and returns an error if there are multiple values for the same key.
+func RetrieveTimeStampParameter(r *http.Request, parameter_name string, missing_ok bool) (time.Time, error) {
+	err := r.ParseForm()
+	if err != nil {
+		return time.Time{}, NewBadRequestError("failed to parse form data")
+	}
+
+	values := r.Form[parameter_name]
+	if len(values) == 0 {
+		if !missing_ok {
+			return time.Time{}, NewBadRequestError("missing parameter: " + parameter_name)
+		}
+		return time.Time{}, nil
+	}
+	if len(values) > 1 {
+		return time.Time{}, NewBadRequestError("multiple values found for parameter: " + parameter_name)
+	}
+
+	timestamp, err := time.Parse(time.RFC3339, strings.TrimSpace(values[0]))
+	if err != nil {
+		return time.Time{}, NewBadRequestError("invalid timestamp format: " + values[0])
+	}
+	return timestamp, nil
 }
 
 // RetrieveIntParameter retrieves a single-value parameter from form data
@@ -67,18 +96,18 @@ func RetrieveStringParameter(r *http.Request, field_name string, missing_ok bool
 func RetrieveIntParameter(r *http.Request, parameter_name string, missing_ok bool) (int, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return 0, NewBadRequestError("Failed to parse form data")
+		return 0, NewBadRequestError("failed to parse form data")
 	}
 
 	values := r.Form[parameter_name]
 	if len(values) == 0 {
 		if !missing_ok {
-			return 0, NewBadRequestError("Missing parameter: " + parameter_name)
+			return 0, NewBadRequestError("missing parameter: " + parameter_name)
 		}
 		return 0, nil
 	}
 	if len(values) > 1 {
-		return 0, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		return 0, NewBadRequestError("multiple values found for parameter: " + parameter_name)
 	}
 	return strconv.Atoi(strings.TrimSpace(values[0]))
 }
@@ -87,23 +116,23 @@ func RetrieveIntParameter(r *http.Request, parameter_name string, missing_ok boo
 func RetrieveBoolParameter(r *http.Request, parameter_name string, missing_ok bool) ([]bool, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return []bool{}, NewBadRequestError("Failed to parse form data")
+		return []bool{}, NewBadRequestError("failed to parse form data")
 	}
 
 	values := r.Form[parameter_name]
 	if len(values) == 0 {
 		if !missing_ok {
-			return []bool{}, NewBadRequestError("Missing parameter: " + parameter_name)
+			return []bool{}, NewBadRequestError("missing parameter: " + parameter_name)
 		} else {
 			return []bool{}, nil
 		}
 	}
 	if len(values) > 1 {
-		return []bool{}, NewBadRequestError("Multiple values found for parameter: " + parameter_name)
+		return []bool{}, NewBadRequestError("multiple values found for parameter: " + parameter_name)
 	}
 	result, err := strconv.ParseBool(strings.TrimSpace(values[0]))
 	if err != nil {
-		return []bool{}, NewBadRequestError("Invalid boolean value: " + values[0])
+		return []bool{}, NewBadRequestError("invalid boolean value: " + values[0])
 	}
 	return []bool{result}, nil
 }
