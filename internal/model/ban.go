@@ -8,16 +8,60 @@ import (
 )
 
 type Ban struct {
-	ID         int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Target     *User  `gorm:"foreignKey:TargetID;constraint:OnDelete:CASCADE" json:"-"`
-	TargetID   int    `json:"target_id"`
-	Issuer     *User  `gorm:"foreignKey:IssuerID;constraint:OnDelete:CASCADE" json:"-"`
-	IssuerID   int    `json:"issuer_id"`
-	Reason     string `json:"reason"`
-	EndsAt     int    `json:"ends_at"`
-	Type       string `json:"type"`
-	CreatedAt  int    `gorm:"autoCreateTime" json:"created_at"`
-	ModifiedAt int    `gorm:"autoUpdateTime:milli" json:"modified_at"`
+	ID         int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	Target     *User     `gorm:"foreignKey:TargetID;constraint:OnDelete:CASCADE" json:"-"`
+	TargetID   int       `json:"target_id"`
+	Issuer     *User     `gorm:"foreignKey:IssuerID;constraint:OnDelete:CASCADE" json:"-"`
+	IssuerID   int       `json:"issuer_id"`
+	Reason     string    `json:"reason"`
+	EndsAt     time.Time `json:"ends_at"`
+	Type       string    `json:"type"`
+	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt time.Time `gorm:"autoUpdateTime:milli" json:"modified_at"`
+}
+
+// ==================== Request parameters ====================
+
+// BansPostRequestParams is the struct for the request body of the POST bans endpoint
+type BansPostRequestParams struct {
+	Target   []*User `json:"-"`
+	Reason   string  `json:"reason"`
+	Duration int     `json:"duration"`
+	Type     string  `json:"type"`
+	Issuer   *User   `json:"-"`
+}
+
+// BansGetRequestParams is the struct for the request body of the GET bans endpoint
+type BansGetRequestParams struct {
+	Order     string    `json:"order"`
+	Limit     int       `json:"limit"`
+	Page      int       `json:"page"`
+	Offset    int       `json:"offset"`
+	ID        []int     `json:"id"`
+	TargetID  []int     `json:"target_id"`
+	Type      []string  `json:"type"`
+	IssuerID  []int     `json:"issuer_id"`
+	EndsAfter time.Time `json:"ends_after"`
+	Reason    string    `json:"reason"`
+}
+
+// BansPatchRequestParams is the struct for the request body of the PATCH bans endpoint
+type BansPatchRequestParams struct {
+	ID       int    `json:"id"`
+	Reason   string `json:"reason"`
+	Duration int    `json:"duration"`
+}
+
+// BansDeleteRequestParams is the struct for the request body of the DELETE bans endpoint
+type BansDeleteRequestParams struct {
+	Order    string   `json:"order"`
+	Limit    int      `json:"limit"`
+	Page     int      `json:"page"`
+	Offset   int      `json:"offset"`
+	ID       []int    `json:"id"`
+	TargetID []int    `json:"target_id"`
+	Type     []string `json:"type"`
+	IssuerID []int    `json:"issuer_id"`
 }
 
 // ================ CRUD Operations ================
@@ -56,7 +100,7 @@ func GetAllBans(db *gorm.DB) ([]*Ban, error) {
 
 // GetActiveBans retrieves all active bans from the database
 func GetActiveBans(db *gorm.DB) ([]*Ban, error) {
-	current_time := int(time.Now().Unix())
+	current_time := time.Now()
 	bans := []*Ban{}
 	err := db.Where("ends_at > ?", current_time).Find(&bans).Error
 	return bans, err
@@ -79,12 +123,12 @@ func (user *User) GetMutes(db *gorm.DB) ([]*Ban, error) {
 // GetActiveBans retrieves all active bans targeting a user from the database
 // The current bans are sorted by the end date
 func (user *User) GetActiveBans(db *gorm.DB) ([]*Ban, error) {
-	current_time := int(time.Now().Unix())
+	current_time := time.Now()
 	bans := []*Ban{}
 	var err error
 	if len(user.Bans) > 0 {
 		for _, ban := range user.Bans {
-			if ban.EndsAt > current_time {
+			if ban.EndsAt.After(current_time) {
 				bans = append(bans, ban)
 			}
 		}
@@ -97,7 +141,7 @@ func (user *User) GetActiveBans(db *gorm.DB) ([]*Ban, error) {
 // GetActiveMutes retrieves all active mutes targeting a user from the database
 // The current mutes are sorted by the end date
 func (user *User) GetActiveMutes(db *gorm.DB) ([]*Ban, error) {
-	current_time := int(time.Now().Unix())
+	current_time := time.Now()
 	bans := []*Ban{}
 	err := db.Where("target_id = ? AND ends_at > ? AND type = ?", user.ID, current_time, constants.MUTE_TYPE).Order("ends_at desc").Find(&bans).Error
 	return bans, err
@@ -112,29 +156,32 @@ func (user *User) GetIssuedBans(db *gorm.DB) ([]*Ban, error) {
 
 // GetActiveIssuedBans retrieves all active bans issued by a user from the database
 func (user *User) GetActiveIssuedBans(db *gorm.DB) ([]*Ban, error) {
-	current_time := int(time.Now().Unix())
+	current_time := time.Now()
 	bans := []*Ban{}
 	err := db.Where("issuer_id = ? AND ends_at > ?", user.ID, current_time).Find(&bans).Error
 	return bans, err
 }
 
-func GetBansByFilters(db *gorm.DB, ids []int, target_ids []int, issuer_ids []int, types []string, reason string, ends_after int) ([]*Ban, error) {
-	query := db.Where("ends_at > ?", ends_after)
-	if len(target_ids) > 0 {
-		query = query.Where("target_id IN ?", target_ids)
+func GetBansByFilters(db *gorm.DB, query_params *BansGetRequestParams) ([]*Ban, error) {
+	query := db.Where("ends_at > ?", query_params.EndsAfter)
+	if len(query_params.TargetID) > 0 {
+		query = query.Where("target_id IN ?", query_params.TargetID)
 	}
-	if len(issuer_ids) > 0 {
-		query = query.Where("issuer_id IN ?", issuer_ids)
+	if len(query_params.IssuerID) > 0 {
+		query = query.Where("issuer_id IN ?", query_params.IssuerID)
 	}
-	if len(types) > 0 {
-		query = query.Where("type IN ?", types)
-	}
-
-	if reason != "" {
-		query = query.Where("reason LIKE ?", "%"+reason+"%")
+	if len(query_params.Type) > 0 {
+		query = query.Where("type IN ?", query_params.Type)
 	}
 
-	query.Or("id IN ?", ids)
+	if query_params.Reason != "" {
+		query = query.Where("reason LIKE ?", "%"+query_params.Reason+"%")
+	}
+
+	query.Or("id IN ?", query_params.ID)
+
+	// Apply order, limit, page, and offset
+	query = AddQueryParamsToDB(query, query_params.Order, query_params.Limit, query_params.Page, query_params.Offset)
 
 	bans := []*Ban{}
 	err := query.Find(&bans).Error
@@ -153,7 +200,31 @@ func (ban *Ban) DeleteBan(db *gorm.DB) error {
 	return db.Delete(ban).Error
 }
 
+func DeleteBanById(db *gorm.DB, id int) error {
+	return db.Delete(&Ban{}, id).Error
+}
+
 // DeleteBans deletes multiple bans from the database
 func DeleteBans(db *gorm.DB, bans []*Ban) error {
 	return db.Delete(&bans).Error
+}
+
+func DeleteBansByFilters(db *gorm.DB, query_params *BansDeleteRequestParams) error {
+	query := db
+	if len(query_params.TargetID) > 0 {
+		query = query.Where("target_id IN ?", query_params.TargetID)
+	}
+	if len(query_params.IssuerID) > 0 {
+		query = query.Where("issuer_id IN ?", query_params.IssuerID)
+	}
+	if len(query_params.Type) > 0 {
+		query = query.Where("type IN ?", query_params.Type)
+	}
+
+	query.Or("id IN ?", query_params.ID)
+
+	// Apply order, limit, page, and offset
+	query = AddQueryParamsToDB(query, query_params.Order, query_params.Limit, query_params.Page, query_params.Offset)
+
+	return query.Delete(&Ban{}).Error
 }

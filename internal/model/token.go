@@ -19,8 +19,8 @@ type AuthToken struct {
 	Type          string     `gorm:"type:TEXT;not null" json:"type"`
 	LinkedTokenID *int       `gorm:"type:INTEGER;default:null" json:"linked_token"`
 	LinkedToken   *AuthToken `gorm:"foreignKey:LinkedTokenID;constraint:OnDelete:SET NULL" json:"-"`
-	CreatedAt     int        `gorm:"autoCreateTime" json:"created_at"`
-	ModifiedAt    int        `gorm:"autoUpdateTime:milli" json:"modified_at"`
+	CreatedAt     time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	ModifiedAt    time.Time  `gorm:"autoUpdateTime:milli" json:"modified_at"`
 }
 
 func (token *AuthToken) BeforeSave(tx *gorm.DB) (err error) {
@@ -117,4 +117,8 @@ func (user *User) DeleteUserTokens(db *gorm.DB) error {
 // DeleteExpiredTokens deletes all expired tokens from the database
 func DeleteExpiredTokens(db *gorm.DB) error {
 	return db.Where("expiration < ?", time.Now().Unix()).Delete(AuthToken{}).Error
+}
+
+func (token *AuthToken) IsExpired() bool {
+	return token.Expiration < time.Now().Unix()
 }
