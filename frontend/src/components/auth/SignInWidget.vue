@@ -60,6 +60,7 @@ export default defineComponent({
           // Emit success event if login is successful
           setIdentity(data.user_id, data.username);
           emit('loginSuccess', { success: true });
+          location.reload();
           clearForm();
         }
       } catch (error: any) {
