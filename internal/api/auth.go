@@ -155,7 +155,7 @@ func Refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func setAuthCookies(w http.ResponseWriter, access_token string, refresh_token string) {
-	httputils.SetSecureCookie(w, constants.ACCESS_TOKEN_COOKIE_NAME, access_token, constants.ACCESS_TOKEN_COOKIE_PATH, 0)
+	httputils.SetSecureCookie(w, constants.ACCESS_TOKEN_COOKIE_NAME, access_token, constants.ACCESS_TOKEN_COOKIE_PATH, constants.ACCESS_TOKEN_EXPIRATION)
 	httputils.SetSecureCookie(w, constants.REFRESH_TOKEN_COOKIE_NAME, refresh_token, constants.REFRESH_TOKEN_COOKIE_PATH, constants.REFRESH_TOKEN_EXPIRATION)
 }
 
