@@ -52,3 +52,15 @@ func (cp *ConnectionPool) Broadcast(ctx context.Context, message []byte) {
 		conn.Write(ctx, websocket.MessageText, message)
 	}
 }
+
+// CheckAlive checks if connections are still alive, removes dead connections
+func (cp *ConnectionPool) CheckAlive(ctx context.Context) {
+	cp.mu.Lock()
+	defer cp.mu.Unlock()
+	for conn := range cp.connections {
+		err := conn.Ping(ctx)
+		if err != nil {
+			delete(cp.connections, conn)
+		}
+	}
+}
