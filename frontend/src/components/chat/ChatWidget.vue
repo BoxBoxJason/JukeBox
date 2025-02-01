@@ -14,6 +14,9 @@ import MessageBubble from '@/components/chat/MessageBubble.vue';
 import type { WebsocketDisplayMessage } from '@/constants/types';
 import { WEBSOCKET_MESSAGE_TYPES } from '@/constants/types';
 import { apiMessageToWebsocketMessage, contentToRawIncomingMessage } from '@/functions/chat';
+import { isUserConnected } from '@/functions/auth';
+
+const PLEASE_LOG_IN_ERROR = "Please log in to use the chat.";
 
 export default defineComponent({
   name: 'ChatWidget',
@@ -28,43 +31,56 @@ export default defineComponent({
     const messages = ref<WebsocketDisplayMessage[]>([]);
     const errorMessage = ref<string | null>(null);
 
-    const establishConnection = () => {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
-      const wsUrl = `${protocol}//${host}/chat/ws`;
-
-      websocketConnection.value = new WebSocket(wsUrl);
-
-      websocketConnection.value.onopen = () => {
-        console.log('WebSocket connection established.');
-      };
-
-      websocketConnection.value.onmessage = (event) => {
-        const data: WebsocketDisplayMessage = JSON.parse(event.data);
-        if (data.type === WEBSOCKET_MESSAGE_TYPES.DISPLAY) {
-          messages.value.push(data);
-        } else {
-          console.error('Unknown message type:', data.type);
-        }
-      };
-
-      websocketConnection.value.onclose = (event) => {
-        console.log('WebSocket connection closed:', event);
-        displayError(`Connection closed: ${event.reason} \nPlease log in again.`);
-        setTimeout(establishConnection, 3000);
-      };
-
-      websocketConnection.value.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        displayError('WebSocket encountered an error.');
-      };
-    };
-
-    const displayError = (message: string, timeout: number = 15000) => {
+    const displayError = (message: string, duration: number = 15000) => {
       errorMessage.value = message;
-      setTimeout(() => {
-        errorMessage.value = null;
-      }, timeout); // Hide after timeout
+      if (duration > 0) {
+        setTimeout(() => {
+          errorMessage.value = null;
+        }, duration);
+      }
+    }
+
+    const establishConnection = () => {
+      if (isUserConnected()) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const wsUrl = `${protocol}//${host}/chat/ws`;
+
+        websocketConnection.value = new WebSocket(wsUrl);
+
+        websocketConnection.value.onopen = () => {
+          console.log('WebSocket connection established.');
+        };
+
+        websocketConnection.value.onmessage = (event) => {
+          const data: WebsocketDisplayMessage = JSON.parse(event.data);
+          if (data.type === WEBSOCKET_MESSAGE_TYPES.DISPLAY) {
+            messages.value.push(data);
+          } else {
+            console.error('Unknown message type:', data.type);
+          }
+        };
+
+        websocketConnection.value.onclose = (event) => {
+          console.log('WebSocket connection closed:', event);
+          // If the user is not authenticated, show "Please log in" permanently.
+          if (!isUserConnected()) {
+            displayError(PLEASE_LOG_IN_ERROR, 0);
+          } else {
+            // Otherwise, display the error (for a short time) and retry the connection.
+            displayError(`Connection closed: ${event.reason}\nPlease log in again.`);
+            setTimeout(establishConnection, 3000);
+          }
+        };
+
+        websocketConnection.value.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          displayError('WebSocket encountered an error.');
+        };
+      } else {
+        displayError(PLEASE_LOG_IN_ERROR, 0);
+        setTimeout(establishConnection, 3000);
+      }
     };
 
     const handleSubmit = (event: Event) => {
@@ -74,7 +90,9 @@ export default defineComponent({
       const input = document.getElementById('chat-input') as HTMLTextAreaElement;
       const message = input.value.trim();
 
-      if (websocketConnection.value && websocketConnection.value.readyState === WebSocket.OPEN && message) {
+      if (websocketConnection.value &&
+        websocketConnection.value.readyState === WebSocket.OPEN &&
+        message) {
         websocketConnection.value.send(contentToRawIncomingMessage(message));
         input.value = '';
       } else {
@@ -87,7 +105,7 @@ export default defineComponent({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault(); // Prevent default Enter behavior
+        event.preventDefault();
         handleSubmit(new Event('submit'));
       }
     };

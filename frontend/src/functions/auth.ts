@@ -124,3 +124,7 @@ export function getUserId(): number | null {
   const userId = localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID);
   return userId == null ? null : parseInt(userId);
 }
+
+export function isUserConnected(): boolean {
+  return getUserId() != null && getUsername() != null;
+}
