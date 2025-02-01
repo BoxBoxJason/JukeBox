@@ -54,7 +54,7 @@ func SetupLogger(logDir string, level string) {
 		logLevel = INFO
 	}
 
-	logFilePath = path.Join(logDir, "async.log")
+	logFilePath = path.Join(logDir, "jukebox.log")
 
 	// Create log directory if it doesn't exist
 	if err = os.MkdirAll(logDir, os.ModePerm); err != nil {

@@ -2,9 +2,6 @@ package main
 
 import (
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
 
 	"github.com/boxboxjason/jukebox/internal/api"
 	"github.com/boxboxjason/jukebox/internal/constants"
@@ -34,27 +31,13 @@ func main() {
 	main_router.Use(middleware.RealIP)         // Get the real IP address of the client
 	main_router.Use(middleware.RequestID)      // Generate a request ID for every request
 	main_router.Use(cors.Handler(cors.Options{ // Setup CORS
-		AllowedOrigins:   []string{"http://localhost:3000", "https://localhost:3000"}, // Allow only the frontend to access the API (for now dev URL)
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token",
+			"Sec-WebSocket-Key", "Sec-WebSocket-Version", "Upgrade", "Connection", "Cookie"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 	}))
-
-	// Serve the frontend
-	frontend_dir := path.Join(".", "frontend", "dist")
-	frontend_fs := http.FileServer(http.Dir(frontend_dir))
-	main_router.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		requested_path := filepath.Join(frontend_dir, r.URL.Path)
-		if _, err := os.Stat(requested_path); os.IsNotExist(err) || r.URL.Path == "/" {
-			// Serve index.html for unmatched routes or root path
-			http.ServeFile(w, r, filepath.Join(frontend_dir, "index.html"))
-		} else {
-			// Serve static file
-			frontend_fs.ServeHTTP(w, r)
-		}
-	})
-	logger.Info("Serving frontend at \"/\" from", frontend_dir)
 
 	// Serve the API
 	api_router := api.ApiRouter()
@@ -73,9 +56,9 @@ func main() {
 	logger.Info("Jobs started")
 
 	// Start the server (attempt to use TLS first)
-	logger.Info("Starting JukeBox server at https://localhost:3000")
-	err := http.ListenAndServeTLS(":3000", "secret/cert.pem", "secret/key.pem", main_router)
+	logger.Info("Starting JukeBox server at http://localhost:3000")
+	err := http.ListenAndServe(":3000", main_router)
 	if err != nil {
-		logger.Fatal("Unable to start the server using TLS: ", err)
+		logger.Fatal("Unable to start the server: ", err)
 	}
 }

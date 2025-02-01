@@ -1,0 +1,35 @@
+name: jukebox
+
+networks:
+  backend-frontend:
+    driver: bridge
+
+volumes:
+  jukebox-data:
+  jukebox-logs:
+
+services:
+  backend:
+    image: jukebox-backend
+    build:
+      context: .
+      dockerfile: Containerfile
+    networks:
+      - backend-frontend
+    volumes:
+      - jukebox-data:/home/jukebox/.jukebox/db/:rw
+      - jukebox-logs:/home/jukebox/.jukebox/logs/:rw
+    ports:
+      - 3000:3000/tcp
+
+  proxy:
+    image: nginx:alpine
+    ports:
+      - 8080:8080/tcp
+      - 8443:8443/tcp
+    networks:
+      - backend-frontend
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro,Z
+      - ./frontend/dist/:/opt/jukebox/:ro,Z
+      - ./secret/:/etc/nginx/ssl:ro,Z
