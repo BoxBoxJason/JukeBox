@@ -90,7 +90,7 @@ export default defineComponent({
         <LogoutIcon />
       </button>
     </div>
-    <div v-else class="w-full flex justify-end items-center gap-2">
+    <div v-else class="w-full flex justify-end items-center gap-5">
       <button class="auth-button" @click="showSignIn">Sign In</button>
       <button class="auth-button" @click="showRegister">Register</button>
     </div>
