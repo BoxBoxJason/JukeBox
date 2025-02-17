@@ -41,6 +41,9 @@
   --color-heading: var(--vt-v-orange);
   --color-text: var(--vt-c-text-light-2);
 
+  --color-sound-top: var(--vt-v-green);
+  --color-sound-bottom: var(--vt-c-white);
+
   --section-gap: 160px;
 }
 
@@ -55,6 +58,9 @@
 
     --color-heading: var(--vt-v-green);
     --color-text: var(--vt-c-text-dark-2);
+
+    --color-sound-top: var(--vt-v-green);
+    --color-sound-bottom: var(--vt-c-white)
   }
 }
 

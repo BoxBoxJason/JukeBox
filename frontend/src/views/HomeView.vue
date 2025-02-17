@@ -10,6 +10,7 @@ import SiteFooter from '@/components/common/SiteFooter.vue';
 import AuthBar from '@/components/auth/AuthBar.vue';
 import AuthSwapper from '@/components/auth/AuthSwapper.vue';
 import ChatWidget from '@/components/chat/ChatWidget.vue';
+import SoundWave from '@/components/common/SoundWave.vue';
 
 export default defineComponent({
   components: {
@@ -17,6 +18,7 @@ export default defineComponent({
     AuthSwapper,
     ChatWidget,
     SiteFooter,
+    SoundWave,
   },
 
   setup() {
@@ -56,8 +58,10 @@ export default defineComponent({
       <!-- Auth Swapper -->
       <AuthSwapper :isVisible="isAuthVisible" :currentForm="currentForm"
         @updateVisibility="(payload) => updateVisibility(payload)" @updateForm="currentForm = $event" />
-      <!-- Push Footer to Bottom -->
-      <div class="flex-grow"></div>
+      <!-- SoundWave -->
+      <div class="flex-grow flex flex-col items-center text-center justify-center">
+        <SoundWave />
+      </div>
       <!-- Footer -->
       <SiteFooter />
     </main>
