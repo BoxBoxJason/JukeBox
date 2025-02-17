@@ -82,7 +82,7 @@ export default defineComponent({
 
 <template>
   <div class="flex flex-col items-center justify-center h-full">
-    <form id="signin-form" class="flex flex-col gap-2" @submit="handleSubmit">
+    <form id="signin-form" class="flex flex-col gap-4" @submit="handleSubmit">
       <div class="auth-input-container">
         <label for="username_or_email" class="auth-input-label">Username or Email</label>
         <input type="text" class="auth-input" placeholder="Enter your username or email" id="username_or_email"
@@ -94,7 +94,7 @@ export default defineComponent({
           <input :type="passwordVisible ? 'text' : 'password'" class="auth-input pr-10" placeholder="Password"
             id="password" name="password" required />
           <button type="button"
-            class="absolute right-2 top-2/4 transform -translate-y-2/4 text-slate-100 hover:text-primary-500 w-6 h-6"
+            class="absolute right-2 top-2/4 transform -translate-y-2/4 text-[var(--color-button-color)] hover:text-primary-500 w-6 h-6"
             @click="togglePasswordVisibility" aria-label="Toggle password visibility">
             <HidePasswordIcon v-if="passwordVisible" />
             <ShowPasswordIcon v-else />
@@ -102,8 +102,8 @@ export default defineComponent({
         </div>
       </div>
       <button type="submit" :disabled="isSubmitting"
-        class="flex items-center justify-center w-64 p-2 bg-primary-500 text-white rounded-lg">
-        <div class="w-6 h-6 mr-2">
+        class="flex items-center justify-center w-64 p-2 text-[var(--color-text)] rounded-lg">
+        <div class="w-6 h-6 mr-2 text-[var(--color-heading)]">
           <ArrowRightIcon />
         </div>
         <span v-if="!isSubmitting">Sign In</span>
