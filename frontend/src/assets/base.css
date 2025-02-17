@@ -10,6 +10,7 @@
   --vt-c-black-soft: #181818;
   --vt-c-black-mute: #2f2f2f;
   --vt-c-grey: #676767;
+  --vt-c-grey-soft: #808080;
 
   --vt-c-indigo: #2c3e50;
 
@@ -34,7 +35,7 @@
   --color-background-mute: var(--vt-c-white-mute);
   --color-button-color: var(--vt-c-grey);
 
-  --color-border: var(--vt-c-divider-light-2);
+  --color-border: var(--vt-c-black-soft);
   --color-border-hover: var(--vt-c-divider-light-1);
 
   --color-heading: var(--vt-v-orange);
