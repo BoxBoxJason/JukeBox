@@ -17,9 +17,9 @@ export default defineComponent({
 
 </script>
 <template>
-  <footer class="w-full flex justify-between items-center px-12 py-4 bg-gray-800 text-white bg-slate-800">
+  <footer class="w-full flex justify-between items-center px-12 py-4 text-[var(--color-text)] text-sm">
     <span>©{{ currentYear() }} <a href="/">JukeBox</a></span>
-    <a href="/help">Help ?</a>
-    <a href="/about">About Us</a>
+    <a href="/help"><u>Help ?</u></a>
+    <a href="/about"><u>About Us</u></a>
   </footer>
 </template>
