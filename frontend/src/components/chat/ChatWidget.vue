@@ -146,7 +146,7 @@ export default defineComponent({
   <div class="flex flex-col h-full bg-[var(--color-background-soft)]">
     <!-- Title -->
     <h1 class="text-3xl text-center p-4">
-      <span class="text-[var(--color-heading)]">Juke</span><span class="text-white">Box</span>
+      <span class="text-[var(--color-heading)]">Juke</span><span class="text-[var(--color-heading-2)]">Box</span>
     </h1>
 
     <!-- Error Notification -->
@@ -160,11 +160,11 @@ export default defineComponent({
     </div>
 
     <!-- Input form -->
-    <div class="rounded-lg bg-[var(--color-background-mute)] mx-2 my-4 overflow-hidden px-2">
+    <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-mute)] mx-2 my-4 overflow-hidden px-2">
       <form class="flex w-full gap-2" id="chat-form" @submit="handleSubmit">
         <textarea
           id="chat-input"
-          class="flex-grow bg-transparent text-[var(--color-text)] resize-none overflow-y-auto py-1 focus:outline-none"
+          class="placeholder-[var(--color-chat)] flex-grow bg-transparent text-[var(--color-chat)] resize-none overflow-y-auto py-1 focus:outline-none"
           placeholder="What are we playing, boss?"
           rows="2"
           @keydown="handleKeyDown"
