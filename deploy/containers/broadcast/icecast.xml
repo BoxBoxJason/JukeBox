@@ -1,0 +1,61 @@
+<icecast>
+  <!-- General settings -->
+  <limits>
+    <clients>100</clients>
+    <sources>2</sources>
+    <queue-size>524288</queue-size>
+    <client-timeout>30</client-timeout>
+    <header-timeout>15</header-timeout>
+    <source-timeout>10</source-timeout>
+    <burst-on-connect>1</burst-on-connect>
+    <burst-size>65535</burst-size>
+  </limits>
+
+  <authentication>
+    <admin-user>admin</admin-user>
+    <admin-password>admin_password</admin-password>
+    <source-password>source_password</source-password>
+    <relay-password>relay_password</relay-password>
+  </authentication>
+
+  <hostname>localhost</hostname>
+  <listen-socket>
+    <port>3001</port>
+  </listen-socket>
+
+  <listen-socket>
+    <port>8443</port>
+    <tls>1</tls>
+  </listen-socket>
+
+  <paths>
+    <basedir>/usr/share/icecast</basedir>
+    <logdir>/var/log/icecast</logdir>
+    <webroot>/usr/share/icecast/web</webroot>
+    <adminroot>/usr/share/icecast/admin</adminroot>
+    <pidfile>/var/run/icecast/icecast.pid</pidfile>
+    <x-forwarded-for>1</x-forwarded-for>
+    <tls-certificate>/etc/ssl/jukebox.pem</tls-certificate>
+  </paths>
+
+  <logging>
+    <accesslog>access.log</accesslog>
+    <errorlog>error.log</errorlog>
+    <loglevel>3</loglevel> <!-- 4 = debug, 3 = info -->
+    <logsize>10000</logsize>
+  </logging>
+
+  <security>
+    <chroot>0</chroot>
+  </security>
+
+  <!-- Mount points -->
+  <mount>
+    <mount-name>/stream</mount-name>
+    <hidden>0</hidden>
+    <public>1</public>
+    <http-headers>
+      <header name="Access-Control-Allow-Origin" value="*" />
+    </http-headers>
+  </mount>
+</icecast>
