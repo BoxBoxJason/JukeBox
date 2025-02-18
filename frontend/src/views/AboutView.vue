@@ -36,21 +36,19 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex max-w-7xl mx-auto min-h-screen items-center justify-center">
     <!-- Main Content -->
     <main class="flex flex-col gap-4 mx-8 my-8 text-[var(--color-text-2)] min-h-screen">
       <!-- Header -->
       <div class="flex flex-row items-center gap-auto pr-4">
         <h1 class="flex-none text-3xl">
-          <span class="text-[var(--color-heading)]">Juke</span
-          ><span class="text-[var(--color-heading-2)]">Box</span>
+          <span class="text-[var(--color-heading)]">Juke</span><span class="text-[var(--color-heading-2)]">Box</span>
         </h1>
         <div class="grow"></div>
-        <a
-          href="/"
-          class="flex flex-row p-2 rounded-full border bg-[var(--color-button-color)] flex-none text-[var(--color-text-2)] h-full items-center gap-2 hover:text-[var(--color-heading)]"
-          ><HomeIcon />Go Home</a
-        >
+        <a href="/"
+          class="flex flex-row p-2 rounded-full border bg-[var(--color-button-color)] flex-none text-[var(--color-text-2)] h-full items-center gap-2 hover:text-[var(--color-heading)]">
+          <HomeIcon />Go Home
+        </a>
       </div>
       <hr />
 
@@ -68,11 +66,7 @@ export default defineComponent({
       <!-- Music generation AI model -->
       <p>
         The music generation AI model is
-        <a
-          href="https://forum.ircam.fr/projects/detail/rave-vst/"
-          class="text-[var(--color-heading)]"
-          >RAVE</a
-        >.
+        <a href="https://forum.ircam.fr/projects/detail/rave-vst/" class="text-[var(--color-heading)]">RAVE</a>.
       </p>
       <p>
         This model is an auto encoder, meaning that is takes sound(s) as input and generates a new
@@ -82,9 +76,7 @@ export default defineComponent({
       </p>
       <p>
         You can check
-        <a href="https://github.com/acids-ircam/RAVE" class="text-[var(--color-heading)]"
-          >their GitHub repository</a
-        >
+        <a href="https://github.com/acids-ircam/RAVE" class="text-[var(--color-heading)]">their GitHub repository</a>
         for more information.
       </p>
       <br />
@@ -101,11 +93,8 @@ export default defineComponent({
       </p>
       <p>
         The filter model is a custom trained version of
-        <a
-          href="https://huggingface.co/docs/transformers/model_doc/distilbert"
-          class="text-[var(--color-heading)]"
-          >DistilBERT</a
-        >
+        <a href="https://huggingface.co/docs/transformers/model_doc/distilbert"
+          class="text-[var(--color-heading)]">DistilBERT</a>
         trained on a dataset of music-related messages.
       </p>
       <br />
@@ -121,21 +110,21 @@ export default defineComponent({
       <!-- Team -->
       <h2 class="text-xl">The team</h2>
       <hr />
-      <div class="flex flex-row gap-20">
+      <div class="flex flex-row gap-20 mx-auto">
         <figure class="flex flex-col items-center gap-2">
-          <img src="@/components/img/Mathis.jpg" class="rounded-full h-40" />
+          <img src="@/assets/img/Mathis.jpg" class="rounded-full h-40" />
           <figcaption>Mathis Front</figcaption>
         </figure>
         <figure class="flex flex-col items-center gap-2">
-          <img src="@/components/img/Thomas.jpg" class="rounded-full h-40" />
+          <img src="@/assets/img/Thomas.jpg" class="rounded-full h-40" />
           <figcaption>Thomas Front</figcaption>
         </figure>
         <figure class="flex flex-col items-center gap-2">
-          <img src="@/components/img/Lockin.jpg" class="rounded-full h-40" />
+          <img src="@/assets/img/Lockin.jpg" class="rounded-full h-40" />
           <figcaption>Lockin PDG</figcaption>
         </figure>
         <figure class="flex flex-col items-center gap-2">
-          <img src="@/components/img/Sofiane.jpg" class="rounded-full h-40" />
+          <img src="@/assets/img/Sofiane.jpg" class="rounded-full h-40" />
           <figcaption>Sofiane Back</figcaption>
         </figure>
       </div>
