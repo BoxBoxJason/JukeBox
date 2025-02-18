@@ -45,7 +45,7 @@ export default defineComponent({
           <span class="text-[var(--color-heading)]">Juke</span
           ><span class="text-[var(--color-heading-2)]">Box</span>
         </h1>
-        <div class="flex-grow"></div>
+        <div class="grow"></div>
         <a
           href="/"
           class="flex flex-row p-2 rounded-full border bg-[var(--color-button-color)] flex-none text-[var(--color-text-2)] h-full items-center gap-2 hover:text-[var(--color-heading)]"
