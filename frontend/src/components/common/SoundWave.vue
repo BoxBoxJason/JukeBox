@@ -57,7 +57,6 @@ export default defineComponent({
 
       // Largeur des rectangles
       const barWidth = canvas.width / numberOfBars
-      const step = Math.floor(bufferLength.value / numberOfBars)
 
       // Remplissage des rectangles
       for (let i = 0; i < numberOfBars; i++) {
