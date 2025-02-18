@@ -242,11 +242,11 @@ export default defineComponent({
     <!-- Boutons de contrôle personnalisés -->
     <div class="flex flex-row gap-8 w-full justify-center mr-2">
       <button @click="playAudio"
-        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]">
+        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)] cursor-pointer">
         <PlayIcon />
       </button>
       <button @click="endAudio"
-        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]">
+        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)] cursor-pointer">
         <StopIcon />
       </button>
     </div>

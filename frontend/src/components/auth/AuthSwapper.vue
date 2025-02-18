@@ -91,34 +91,25 @@ export default defineComponent({
 <template>
   <div v-if="isVisible" class="fixed z-20 top-0 left-0 w-screen h-screen bg-black bg-opacity-85">
     <div
-      class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center px-10 transform p-4 bg-[var(--color-background)] rounded-lg"
-    >
-      <button class="absolute top-2 right-2 h-6 w-6" @click="closeWidget">
+      class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center px-10 transform p-4 bg-[var(--color-background)] rounded-lg">
+      <button class="absolute top-2 right-2 h-6 w-6 cursor-pointer" @click="closeWidget">
         <CrossIcon />
       </button>
       <div class="flex gap-4 mt-4 mb-4">
-        <button
-          class="px-4 py-2 rounded focus:outline-none"
-          :class="{
-            'bg-[var(--color-hover)] border border-[var(--color-border)] text-[var(--color-chat)] hover:bg-[var(--color-hover)]':
-              currentForm === 'signin',
-            'bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-chat)]':
-              currentForm !== 'signin'
-          }"
-          @click="$emit('updateForm', 'signin')"
-        >
+        <button class="px-4 py-2 rounded-sm focus:outline-hidden" :class="{
+          'bg-[var(--color-hover)] border border-[var(--color-border)] text-[var(--color-chat)] hover:bg-[var(--color-hover)]':
+            currentForm === 'signin',
+          'bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-chat)]':
+            currentForm !== 'signin'
+        }" @click="$emit('updateForm', 'signin')">
           Sign In
         </button>
-        <button
-          class="px-4 py-2 rounded focus:outline-none"
-          :class="{
-            'bg-[var(--color-hover)] border border-[var(--color-border)] text-[var(--color-chat)]':
-              currentForm === 'register',
-            'bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-chat)]':
-              currentForm !== 'register'
-          }"
-          @click="$emit('updateForm', 'register')"
-        >
+        <button class="px-4 py-2 rounded-sm focus:outline-hidden" :class="{
+          'bg-[var(--color-hover)] border border-[var(--color-border)] text-[var(--color-chat)]':
+            currentForm === 'register',
+          'bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-chat)]':
+            currentForm !== 'register'
+        }" @click="$emit('updateForm', 'register')">
           Register
         </button>
       </div>
@@ -127,13 +118,10 @@ export default defineComponent({
       <RegisterWidget v-else @registerSuccess="showMessage" />
       <!-- Message Display -->
       <div class="h-7 mt-2">
-        <div
-          v-if="message"
-          :class="{
-            'text-green-600': messageType === 'success',
-            'text-red-600': messageType === 'error'
-          }"
-        >
+        <div v-if="message" :class="{
+          'text-green-600': messageType === 'success',
+          'text-red-600': messageType === 'error'
+        }">
           {{ message }}
         </div>
       </div>

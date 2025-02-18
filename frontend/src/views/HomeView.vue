@@ -60,7 +60,7 @@ export default defineComponent({
         <AuthSwapper :isVisible="isAuthVisible" :currentForm="currentForm"
           @updateVisibility="(payload) => updateVisibility(payload)" @updateForm="currentForm = $event" />
         <!-- SoundWave -->
-        <div class="flex-grow flex flex-col items-center text-center justify-center">
+        <div class="grow flex flex-col items-center text-center justify-center">
           <SoundWave />
         </div>
         <!-- Footer -->
