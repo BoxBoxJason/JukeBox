@@ -39,6 +39,7 @@
   --color-border-hover: var(--vt-c-divider-light-1);
 
   --color-heading: var(--vt-v-orange);
+  --color-heading-2: var(--vt-v-white);
   --color-text: var(--vt-c-text-light-2);
 
   --color-sound-top: var(--vt-v-green);
@@ -57,6 +58,7 @@
     --color-border-hover: var(--vt-c-divider-dark-1);
 
     --color-heading: var(--vt-v-green);
+    --color-heading-2: var(--vt-c-white);
     --color-text: var(--vt-c-text-dark-2);
 
     --color-sound-top: var(--vt-v-green);
