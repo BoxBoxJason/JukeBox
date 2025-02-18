@@ -93,16 +93,16 @@ export default defineComponent({
     <div
       class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center px-10 transform p-4 bg-[var(--color-background)] rounded-lg"
     >
-      <button class="absolute top-2 right-2 text-[var(--color-button-color)] h-6 w-6" @click="closeWidget">
+      <button class="absolute top-2 right-2 h-6 w-6" @click="closeWidget">
         <CrossIcon />
       </button>
       <div class="flex gap-4 mt-4 mb-4">
         <button
           class="px-4 py-2 rounded focus:outline-none"
           :class="{
-            'bg-[var(--color-background)] border border-[var(--color-text)] text-[var(--color-text)]':
+            'bg-[var(--color-hover)] border border-[var(--color-border)] text-[var(--color-chat)] hover:bg-[var(--color-hover)]':
               currentForm === 'signin',
-            'bg-[var(--color-button-color)] border border-[var(--color-border)] text-[var(--color-text)] hover:text-white':
+            'bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-chat)]':
               currentForm !== 'signin'
           }"
           @click="$emit('updateForm', 'signin')"
@@ -112,9 +112,9 @@ export default defineComponent({
         <button
           class="px-4 py-2 rounded focus:outline-none"
           :class="{
-            'bg-[var(--color-background)] border border-[var(--color-text)] text-[var(--color-text)]':
+            'bg-[var(--color-hover)] border border-[var(--color-border)] text-[var(--color-chat)]':
               currentForm === 'register',
-            'bg-[var(--color-button-color)] border border-[var(--color-border)] text-[var(--color-text)] hover:text-white':
+            'bg-[var(--color-background)] border border-[var(--color-border)] text-[var(--color-chat)]':
               currentForm !== 'register'
           }"
           @click="$emit('updateForm', 'register')"

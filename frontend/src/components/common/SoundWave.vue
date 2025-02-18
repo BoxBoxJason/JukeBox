@@ -244,11 +244,11 @@ export default defineComponent({
     <div class="flex flex-row gap-8 w-full justify-center mr-2">
       <button
         @click="playAudio"
-        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-background)]"
+        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]"
       >
         <PlayIcon />
       </button>
-      <button @click="endAudio" class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-background)]">
+      <button @click="endAudio" class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]">
         <StopIcon />
       </button>
     </div>

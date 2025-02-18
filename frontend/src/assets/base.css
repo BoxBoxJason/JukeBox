@@ -4,7 +4,7 @@
 :root {
   --vt-c-white: #ffffff;
   --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+  --vt-c-white-mute: #e6e6e6;
 
   --vt-c-black: #222222;
   --vt-c-black-soft: #181818;
@@ -33,20 +33,22 @@
   --color-background: var(--vt-c-white);
   --color-background-soft: var(--vt-c-white-soft);
   --color-background-mute: var(--vt-c-white-mute);
-  --color-button-color: var(--vt-c-grey);
+  --color-button-color: var(--vt-c-white);
 
-  --color-border: var(--vt-c-black-soft);
-  --color-border-hover: var(--vt-c-divider-light-1);
+  --color-border: var(--vt-c-grey-soft);
+  --color-hover: var(--vt-c-divider-light-1);
 
-  --color-heading: var(--vt-v-orange);
-  --color-heading-2: var(--vt-v-white);
+  --color-heading: #f68712;
+  --color-heading-2: #676767;
+
   --color-text: var(--vt-c-text-light-2);
+  --color-chat: var(--vt-c-black);
   --color-text-2: var(--vt-c-black);
 
-  --color-sound-top: var(--vt-v-green);
-  --color-sound-bottom: var(--vt-c-white);
+  --color-sound-top: var(--color-heading);
+  --color-sound-bottom: var(--color-heading-2);
 
-  --section-gap: 160px;
+  --color-icon: var(--vt-c-black);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -57,15 +59,19 @@
     --color-button-color: var(--vt-c-grey);
 
     --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
+    --color-hover: var(--vt-c-grey);
 
-    --color-heading: var(--vt-v-green);
-    --color-heading-2: var(--vt-c-white);
+    --color-heading: #6adfb2;
+    --color-heading-2: #ffffff;
+
     --color-text: var(--vt-c-text-dark-2);
+    --color-chat: var(--vt-c-text-dark-2);
     --color-text-2: var(--vt-c-white);
 
-    --color-sound-top: var(--vt-v-green);
-    --color-sound-bottom: var(--vt-c-white)
+    --color-sound-top: var(--color-heading);
+    --color-sound-bottom: var(--color-heading-2);
+
+    --color-icon: var(--vt-c-white);
   }
 }
 
