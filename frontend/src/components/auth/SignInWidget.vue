@@ -96,13 +96,13 @@ export default defineComponent({
           <button type="button"
             class="absolute right-2 top-2/4 transform -translate-y-2/4 hover:text-primary-500 w-6 h-6"
             @click="togglePasswordVisibility" aria-label="Toggle password visibility">
-            <HidePasswordIcon v-if="passwordVisible" />
-            <ShowPasswordIcon v-else />
+            <HidePasswordIcon class="cursor-pointer" v-if="passwordVisible" />
+            <ShowPasswordIcon class="cursor-pointer" v-else />
           </button>
         </div>
       </div>
       <button type="submit" :disabled="isSubmitting"
-        class="flex items-center justify-center w-64 p-2 text-[var(--color-chat)] rounded-lg">
+        class="flex items-center justify-center w-64 p-2 text-[var(--color-chat)] rounded-lg cursor-pointer">
         <div class="w-6 h-6 mr-2">
           <ArrowRightIcon />
         </div>

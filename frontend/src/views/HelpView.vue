@@ -49,7 +49,7 @@ export default defineComponent({
       <AuthSwapper :isVisible="isAuthVisible" :currentForm="currentForm"
         @updateVisibility="(payload) => updateVisibility(payload)" @updateForm="currentForm = $event" />
       <!-- Push Footer to Bottom -->
-      <div class="flex-grow"></div>
+      <div class="grow"></div>
       <!-- Footer -->
       <SiteFooter />
     </main>

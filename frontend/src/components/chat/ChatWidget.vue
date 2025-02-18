@@ -155,7 +155,7 @@ export default defineComponent({
     </div>
 
     <!-- Chat display -->
-    <div id="chat-display" class="flex flex-col gap-2 flex-grow overflow-y-auto py-4 px-2">
+    <div id="chat-display" class="flex flex-col gap-2 grow overflow-y-auto py-4 px-2">
       <MessageBubble v-for="(message, index) in messages" :key="index" :message="message" />
     </div>
 
@@ -164,7 +164,7 @@ export default defineComponent({
       class="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-mute)] mx-2 my-4 overflow-hidden px-2">
       <form class="flex w-full gap-2" id="chat-form" @submit="handleSubmit">
         <textarea id="chat-input"
-          class="placeholder-[var(--color-chat)] flex-grow bg-transparent text-[var(--color-chat)] resize-none overflow-y-auto py-1 focus:outline-none min-h-4"
+          class="placeholder-[var(--color-chat)] grow bg-transparent text-[var(--color-chat)] resize-none overflow-y-auto py-1 focus:outline-hidden min-h-4"
           placeholder="What are we playing, boss?" rows="2" @keydown="handleKeyDown"></textarea>
         <button type="submit" :disabled="isSubmitting"
           class="h-7 w-7 align-middle cursor-pointer bg-transparent text-[var(--color-background-soft)] my-auto">
