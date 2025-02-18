@@ -41,6 +41,7 @@
   --color-heading: var(--vt-v-orange);
   --color-heading-2: var(--vt-v-white);
   --color-text: var(--vt-c-text-light-2);
+  --color-text-2: var(--vt-c-black);
 
   --color-sound-top: var(--vt-v-green);
   --color-sound-bottom: var(--vt-c-white);
@@ -53,6 +54,7 @@
     --color-background: var(--vt-c-black);
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);
+    --color-button-color: var(--vt-c-grey);
 
     --color-border: var(--vt-c-divider-dark-2);
     --color-border-hover: var(--vt-c-divider-dark-1);
@@ -60,6 +62,7 @@
     --color-heading: var(--vt-v-green);
     --color-heading-2: var(--vt-c-white);
     --color-text: var(--vt-c-text-dark-2);
+    --color-text-2: var(--vt-c-white);
 
     --color-sound-top: var(--vt-v-green);
     --color-sound-bottom: var(--vt-c-white)
