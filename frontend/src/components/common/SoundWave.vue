@@ -1,7 +1,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref } from 'vue'
-import PlayIcon from '../icons/PlayIcon.vue'
-import StopIcon from '../icons/StopIcon.vue'
+import PlayIcon from '@/components/icons/PlayIcon.vue'
+import StopIcon from '@/components/icons/StopIcon.vue'
 
 export default defineComponent({
   name: 'SoundWave',
@@ -242,13 +242,12 @@ export default defineComponent({
 
     <!-- Boutons de contrôle personnalisés -->
     <div class="flex flex-row gap-8 w-full justify-center mr-2">
-      <button
-        @click="playAudio"
-        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]"
-      >
+      <button @click="playAudio"
+        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]">
         <PlayIcon />
       </button>
-      <button @click="endAudio" class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]">
+      <button @click="endAudio"
+        class="rounded-full bg-[var(--color-button-color)] border border-[var(--color-border)] p-2 hover:bg-[var(--color-hover)]">
         <StopIcon />
       </button>
     </div>
