@@ -44,7 +44,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex bg-[var(--color-background-soft)]">
     <!-- Sidebar -->
     <aside class="fixed left-0 top-0 h-screen z-10 overflow-y-auto"
       style="max-width: 500px; min-width: 300px; width: 25vw">
@@ -52,18 +52,20 @@ export default defineComponent({
     </aside>
 
     <!-- Main Content -->
-    <main class="flex flex-col w-3/4 min-h-screen" style="margin-left: calc(max(300px, min(25vw, 500px)))">
-      <!-- Auth Bar -->
-      <AuthBar @updateVisibility="updateVisibility" />
-      <!-- Auth Swapper -->
-      <AuthSwapper :isVisible="isAuthVisible" :currentForm="currentForm"
-        @updateVisibility="(payload) => updateVisibility(payload)" @updateForm="currentForm = $event" />
-      <!-- SoundWave -->
-      <div class="flex-grow flex flex-col items-center text-center justify-center">
-        <SoundWave />
-      </div>
-      <!-- Footer -->
-      <SiteFooter />
-    </main>
+    <div class="flex flex-col w-3/4 min-h-screen" style="margin-left: calc(max(300px, min(25vw, 500px)))">
+      <main class="flex flex-col h-full bg-[var(--color-background)] rounded-xl" style="margin:10px">
+        <!-- Auth Bar -->
+        <AuthBar @updateVisibility="updateVisibility" />
+        <!-- Auth Swapper -->
+        <AuthSwapper :isVisible="isAuthVisible" :currentForm="currentForm"
+          @updateVisibility="(payload) => updateVisibility(payload)" @updateForm="currentForm = $event" />
+        <!-- SoundWave -->
+        <div class="flex-grow flex flex-col items-center text-center justify-center">
+          <SoundWave />
+        </div>
+        <!-- Footer -->
+        <SiteFooter />
+      </main>
+    </div>
   </div>
 </template>
