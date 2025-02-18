@@ -143,7 +143,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-[var(--color-background-soft)]">
+  <div class="flex flex-col h-full bg-[var(--color-background-soft)] z-50">
     <!-- Title -->
     <h1 class="text-3xl text-center p-4">
       <span class="text-[var(--color-heading)]">Juke</span><span class="text-[var(--color-heading-2)]">Box</span>
@@ -160,11 +160,10 @@ export default defineComponent({
     </div>
 
     <!-- Input form -->
-    <div
-      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-mute)] mx-2 my-4 overflow-hidden px-2">
-      <form class="flex w-full gap-2" id="chat-form" @submit="handleSubmit">
+    <div class="bg-neutral-950">
+      <form class="flex gap-2 w-full my-4 px-2" id="chat-form" @submit="handleSubmit">
         <textarea id="chat-input"
-          class="placeholder-[var(--color-chat)] grow bg-transparent text-[var(--color-chat)] resize-none overflow-y-auto py-1 focus:outline-hidden min-h-4"
+          class="flex-grow rounded-lg border border-[var(--color-border)] bg-[var(--color-background-mute)] resize-none overflow-y-auto my-auto placeholder-[var(--color-chat)] py-1 px-2"
           placeholder="What are we playing, boss?" rows="2" @keydown="handleKeyDown"></textarea>
         <button type="submit" :disabled="isSubmitting"
           class="h-7 w-7 align-middle cursor-pointer bg-transparent text-[var(--color-background-soft)] my-auto">

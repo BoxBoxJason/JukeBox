@@ -8,7 +8,7 @@ The component emits an event to the parent component when the user is successful
 import { defineComponent, ref } from 'vue';
 import ShowPasswordIcon from '@/components/icons/ShowPasswordIcon.vue';
 import HidePasswordIcon from '@/components/icons/HidePasswordIcon.vue';
-import ArrowRightIcon from '../icons/ArrowRightIcon.vue';
+import ArrowRightIcon from '@/components/icons/ArrowRightIcon.vue';
 
 export default defineComponent({
   name: 'RegisterWidget',
