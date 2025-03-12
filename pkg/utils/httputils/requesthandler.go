@@ -495,3 +495,25 @@ func ValidateImageFile(file multipart.File, file_header *multipart.FileHeader) e
 
 	return nil
 }
+
+func RetryRequest(request_url string, body []byte, retry_delay int, max_retry int) error {
+	if max_retry <= 0 {
+		max_retry = 1
+	}
+
+	for i := 0; i < max_retry; i++ {
+		resp, err := http.Post(request_url, "application/json", bytes.NewBuffer(body))
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			return nil
+		}
+
+		time.Sleep(time.Duration(retry_delay))
+	}
+
+	return errors.New("failed to send prompt after maximum retries")
+}
