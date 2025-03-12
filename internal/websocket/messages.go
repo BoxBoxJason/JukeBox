@@ -55,7 +55,7 @@ func processWebsocketMessage(message_type websocket.MessageType, message []byte,
 				return nil, err
 			} else {
 				db_message.Sender = sender
-				addMessage(db_message.Content)
+				go addMessage(db_message.Content)
 			}
 
 			// Marshal the display message
