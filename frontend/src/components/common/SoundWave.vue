@@ -210,6 +210,11 @@ export default defineComponent({
       }
     }
 
+    // Method to get the full URL for the audio source
+    const getAudioSourceUrl = () => {
+      return `${window.location.origin}/stream/`
+    }
+
     onMounted(() => {
       initAudio()
       initCanvas()
@@ -222,7 +227,8 @@ export default defineComponent({
       endAudio,
       startAnimation,
       stopAnimation,
-      draw
+      draw,
+      getAudioSourceUrl
     }
   }
 })
@@ -235,7 +241,7 @@ export default defineComponent({
 
     <!-- Élément audio sans contrôles intégrés -->
     <audio ref="audioRef">
-      <source src="./test.mp3" type="audio/mp3" />
+      <source :src="getAudioSourceUrl()" type="audio/mp3" />
       Votre navigateur ne supporte pas l'élément audio.
     </audio>
 

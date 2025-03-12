@@ -26,7 +26,6 @@ var (
 	mu_message_stack      = sync.RWMutex{}
 	MUSIC_GENERATOR_URL   = os.Getenv("MUSIC_GENERATOR_URL")
 	prompt_lock           = sync.Mutex{}
-	messageThresholdCh    = make(chan struct{}, 1)
 )
 
 type MusicGeneratorRequest struct {
@@ -41,13 +40,10 @@ func init() {
 // addMessage adds a message to the current message stack
 func addMessage(message string) {
 	mu_message_stack.Lock()
-	defer mu_message_stack.Unlock()
 	current_message_stack = append(current_message_stack, message)
+	mu_message_stack.Unlock()
 	if len(current_message_stack) >= 10 {
-		select {
-		case messageThresholdCh <- struct{}{}:
-		default:
-		}
+		sendPrompt()
 	}
 }
 
@@ -79,14 +75,13 @@ func sendPrompt() error {
 	if err != nil {
 		return err
 	}
+	logger.Debug("Sending prompt to music generator")
 	err = httputils.RetryRequest(MUSIC_GENERATOR_URL, jsonData, 5, 3)
 	if err != nil {
 		return err
 	}
 
-	mu_message_stack.Lock()
-	current_message_stack = []string{}
-	mu_message_stack.Unlock()
+	emptyMessageStack()
 	return nil
 }
 
@@ -95,25 +90,16 @@ func sendPrompt() error {
 func watchPrompts() {
 	ticker := time.NewTicker(PROMPT_INTERVAL)
 	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			mu_message_stack.RLock()
-			if len(current_message_stack) > 0 {
-				mu_message_stack.RUnlock()
-				err := sendPrompt()
-				if err != nil {
-					logger.Error("Failed to send prompt to music generator", err)
-				}
-				emptyMessageStack()
-
-			}
-		case <-messageThresholdCh:
+	for range ticker.C {
+		mu_message_stack.RLock()
+		if len(current_message_stack) > 0 {
+			mu_message_stack.RUnlock()
 			err := sendPrompt()
 			if err != nil {
 				logger.Error("Failed to send prompt to music generator", err)
 			}
-			emptyMessageStack()
+		} else {
+			mu_message_stack.RUnlock()
 		}
 	}
 }
