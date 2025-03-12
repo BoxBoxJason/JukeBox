@@ -66,7 +66,7 @@ export default defineComponent({
       <!-- Music generation AI model -->
       <p>
         The music generation AI model is
-        <a href="https://www.music-gpt.xyz" class="text-[var(--color-heading)]">RAVE</a>.
+        <a href="https://www.music-gpt.xyz" class="text-[var(--color-heading)]">MusicGPT</a>.
       </p>
       <p>
         This model is an auto encoder, meaning that is takes sound(s) as input and generates a new
@@ -95,7 +95,7 @@ export default defineComponent({
         </figure>
         <figure class="flex flex-col items-center gap-2">
           <img src="@/assets/img/Lockin.jpg" class="rounded-full h-40" />
-          <figcaption>Lockin PDG</figcaption>
+          <figcaption>Lockin Back</figcaption>
         </figure>
         <figure class="flex flex-col items-center gap-2">
           <img src="@/assets/img/Sofiane.jpg" class="rounded-full h-40" />
