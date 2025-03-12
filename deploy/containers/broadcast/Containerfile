@@ -1,15 +1,20 @@
 FROM alpine
 
+ENV ICECAST_USER=source \
+  ICECAST_PASSWORD=source_password \
+  ICECAST_RELAY_PASSWORD=relay_password \
+  ICECAST_ADMIN_USER=admin \
+  ICECAST_ADMIN_PASSWORD=admin_password
+
 RUN apk update && \
   apk upgrade && \
-  apk add --no-cache ffmpeg icecast && \
-  rm -rf /var/cache/apk/*
+  apk add --no-cache ffmpeg icecast inotify-tools envsubst curl && \
+  rm -rf /var/cache/apk/* && \
+  sed -i 's/icecast:\/sbin\/nologin/icecast:\/bin\/sh/' /etc/passwd
 
-COPY --chmod=644 ./icecast.xml /etc/icecast.xml
-COPY --chmod=644 ./test.m4a /test.m4a
+COPY --chmod=755 ./icecast.xml /etc/icecast_template.xml
+COPY --chmod=444 ./silence.mp3 /opt/musicgpt/silence.mp3
 COPY --chmod=755 ./docker-entrypoint.sh /docker-entrypoint.sh
-
-USER icecast
 
 EXPOSE 3001
 
