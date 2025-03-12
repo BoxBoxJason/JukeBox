@@ -66,7 +66,7 @@ export default defineComponent({
       <!-- Music generation AI model -->
       <p>
         The music generation AI model is
-        <a href="https://forum.ircam.fr/projects/detail/rave-vst/" class="text-[var(--color-heading)]">RAVE</a>.
+        <a href="https://www.music-gpt.xyz" class="text-[var(--color-heading)]">RAVE</a>.
       </p>
       <p>
         This model is an auto encoder, meaning that is takes sound(s) as input and generates a new
@@ -76,36 +76,10 @@ export default defineComponent({
       </p>
       <p>
         You can check
-        <a href="https://github.com/acids-ircam/RAVE" class="text-[var(--color-heading)]">their GitHub repository</a>
+        <a href="https://github.com/gabotechs/MusicGPT" class="text-[var(--color-heading)]">their GitHub repository</a>
         for more information.
       </p>
       <br />
-
-      <!-- User requests processing -->
-      <h2 class="text-xl">Filtering</h2>
-      <hr />
-      <p>
-        The users chat messages are analyzed by an AI model that can filter out messages that are
-        not related to music creation, and can also understand the user's requests and translate
-        them into music commands. This model's mission is to protect the music generation AI model
-        from being spammed with irrelevant messages. It also recognizes malicious intents and can
-        ban users from the platform.
-      </p>
-      <p>
-        The filter model is a custom trained version of
-        <a href="https://huggingface.co/docs/transformers/model_doc/distilbert"
-          class="text-[var(--color-heading)]">DistilBERT</a>
-        trained on a dataset of music-related messages.
-      </p>
-      <br />
-
-      <!-- User requests processing -->
-      <h2 class="text-xl">Reformulation</h2>
-      <hr />
-      <p>
-        The reformulation model converts a user request into a music command that can be understood
-        by the music generation AI model.
-      </p>
 
       <!-- Team -->
       <h2 class="text-xl">The team</h2>
