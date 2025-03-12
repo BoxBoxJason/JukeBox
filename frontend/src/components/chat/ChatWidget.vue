@@ -160,7 +160,7 @@ export default defineComponent({
     </div>
 
     <!-- Input form -->
-    <div class="bg-neutral-950">
+    <div>
       <form class="flex gap-2 w-full my-4 px-2" id="chat-form" @submit="handleSubmit">
         <textarea id="chat-input"
           class="flex-grow rounded-lg border border-[var(--color-border)] bg-[var(--color-background-mute)] resize-none overflow-y-auto my-auto placeholder-[var(--color-chat)] py-1 px-2"
