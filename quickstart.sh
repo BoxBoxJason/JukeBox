@@ -18,6 +18,8 @@ else
   exit 1
 fi
 
+${DOCKER_COMPOSE} down
+
 cd ${JUKEBOX_FRONTEND_DIR} && \
 npm install && \
 rm -rf ${JUKEBOX_FRONTEND_DIR}/dist && \
