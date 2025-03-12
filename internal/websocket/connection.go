@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	PING_INTERVAL       = 30 * time.Second
+	PING_INTERVAL       = 10 * time.Minute
 	PONG_TIMEOUT        = 10 * time.Second
 	AUTH_CHECK_INTERVAL = 5 * time.Minute
 )
