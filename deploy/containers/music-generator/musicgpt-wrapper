@@ -1,0 +1,15 @@
+#!/bin/sh
+
+usage () {
+  echo "Usage: musicgpt-wrapper <input> <duration> <output>"
+  exit 1
+}
+
+if [ "$#" -ne 3 ]; then
+  usage
+fi
+
+MUSICGPT_GENERATED_DIR=/opt/musicgpt/generated
+mkdir -p ${MUSICGPT_GENERATED_DIR}
+
+musicgpt --no-interactive --no-playback --ui-no-open --secs "$2" --output ${MUSICGPT_GENERATED_DIR}/$3 "$1"
