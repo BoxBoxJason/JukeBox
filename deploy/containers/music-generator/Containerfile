@@ -1,0 +1,8 @@
+FROM gabotechs/musicgpt
+
+COPY --chmod=550 ./musicgpt-wrapper ./bin/musicgpt-api /usr/bin/
+COPY --chmod=550 ./docker-entrypoint.sh /
+
+EXPOSE 5556
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
