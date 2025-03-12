@@ -12,10 +12,10 @@
   </limits>
 
   <authentication>
-    <admin-user>admin</admin-user>
-    <admin-password>admin_password</admin-password>
-    <source-password>source_password</source-password>
-    <relay-password>relay_password</relay-password>
+    <admin-user>${ICECAST_ADMIN_USER}</admin-user>
+    <admin-password>${ICECAST_ADMIN_PASSWORD}</admin-password>
+    <source-password>${ICECAST_PASSWORD}</source-password>
+    <relay-password>${ICECAST_RELAY_PASSWORD}</relay-password>
   </authentication>
 
   <hostname>localhost</hostname>
@@ -52,10 +52,11 @@
   <!-- Mount points -->
   <mount>
     <mount-name>/stream</mount-name>
-    <hidden>0</hidden>
-    <public>1</public>
-    <http-headers>
-      <header name="Access-Control-Allow-Origin" value="*" />
-    </http-headers>
+    <fallback-mount>/fallback</fallback-mount>
   </mount>
+
+  <mount>
+    <mount-name>/fallback</mount-name>
+    <file>/opt/musicgpt/silence.mp3</file>
+</mount>
 </icecast>
