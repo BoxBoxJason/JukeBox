@@ -231,7 +231,7 @@ export default defineComponent({
 <template>
   <div class="flex flex-col items-center justify-center gap-4">
     <!-- Canvas pour dessiner les rectangles -->
-    <canvas ref="canvasRef" width="1000" height="200"></canvas>
+    <canvas ref="canvasRef" width="900" height="200"></canvas>
 
     <!-- Élément audio sans contrôles intégrés -->
     <audio ref="audioRef">
