@@ -25,4 +25,5 @@ npm install && \
 rm -rf ${JUKEBOX_FRONTEND_DIR}/dist && \
 npm run build && \
 cd .. && \
+npx @redocly/cli build-docs ${JUKEBOX_SCRIPT_DIR}/documentation/api/api-spec.yml -o ${JUKEBOX_FRONTEND_DIR}/dist/swagger/index.html && \
 ${DOCKER_COMPOSE} up --build
