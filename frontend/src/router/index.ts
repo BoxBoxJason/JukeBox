@@ -32,6 +32,11 @@ const routes: Array<RouteRecordRaw> = [
       title: 'JukeBox | Help'
     } as CustomRouteMeta
   },
+  // Add this route to redirect /swagger to /swagger/index.html
+  {
+    path: '/swagger',
+    redirect: '/swagger/index.html'
+  }
 ];
 
 const router = createRouter({
